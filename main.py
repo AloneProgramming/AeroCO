@@ -1,57 +1,64 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-# parameters
-N = 64  # number of panels
-R = 1.0  # test circle radius
-V_inf = 1.0  # flow velocity
-alpha_deg = 0.0  # AOA (deg)
-alpha_rad = np.radians(alpha_deg)  # AOA (rad)
 
-print("Initialization is complete.")
-print(f"Number of panels: {N}, Test circle radius: {R}, AOA: {alpha_deg} deg.")
+class UniformFlow:
+    def __init__(self, u_inf=1.0, alpha=0.0):
+        self.u_inf = u_inf  # U.F. velocity
+        self.alpha = np.radians(alpha)  # U.F. angle of attack
 
-# test circle creating
-theta = np.linspace(0, 2*np.pi, N+1)  # test circles angles dist
-x = R * np.cos(theta)
-y = R * np.sin(theta)
+    def velocity(self, x, y):
+        """Returns U.F. velocity components (u, v) in (x, y)"""
+        u = self.u_inf * np.cos(self.alpha)
+        v = self.u_inf * np.sin(self.alpha)
+        return u, v
 
-print(f"{len(x)} circle points were prepared.")
-print(f"First point: ({x[0]:.3f}, {y[0]:.3f})")
-print(f"Last point: ({x[-1]:.3f}, {y[-1]:.3f})")
+    def stream_function(self, x, y):
+        """Returns U.F. stream function"""
+        return self.u_inf * (y * np.cos(self.alpha) - x * np.sin(self.alpha))
 
-# panels
-x_control = np.zeros(N)
-y_control = np.zeros(N)
-theta_panel = np.zeros(N)
-length = np.zeros(N)
-nx = np.zeros(N)
-ny = np.zeros(N)
 
-for i in range(N):
-    x_start, y_start = x[i], y[i]
-    x_end, y_end = x[i+1], y[i+1]
+class Source:
+    def __init__(self, strength, x, y):
+        self.strength = strength  # S. power
+        self.x, self.y = x, y  # S. position
 
-    length[i] = np.sqrt((x_end - x_start)**2 + (y_end - y_start)**2)
+    def velocity(self, x, y):
+        """Returns S. velocity in (x, y)"""
+        dx, dy = x - self.x, y - self.y
+        r = np.sqrt(dx ** 2 + dy ** 2)
 
-    theta_panel[i] = np.arctan2(y_end - y_start, x_end - x_start)
+        if r == 0:
+            return 0, 0
 
-    nx[i] = -np.sin(theta_panel[i])
-    ny[i] = np.cos(theta_panel[i])
+        u = (self.strength / (2 * np.pi)) * (dx / r ** 2)
+        v = (self.strength / (2 * np.pi)) * (dy / r ** 2)
+        return u, v
 
-    x_control[i] = (x_start + x_end) / 2
-    y_control[i] = (y_start + y_end) / 2
+    def stream_function(self, x, y):
+        """Returns S. stream function"""
+        dx, dy = x - self.x, y - self.y
+        return (self.strength / (2 * np.pi)) * np.arctan2(dy, dx)
 
-print("Panels have been calculated")
-print(f"Mean panel length is: {np.mean(length):.4f}")
+
+# mesh
+x = np.linspace(-2, 2, 100)
+y = np.linspace(-2, 2, 100)
+X, Y = np.meshgrid(x, y)
+
+# flows
+uniform = UniformFlow(u_inf=1.0, alpha=0)
+source = Source(strength=2.0, x=0, y=0)
+
+# total stream function
+psi_total = uniform.stream_function(X, Y) + source.stream_function(X, Y)
 
 # visualization
 plt.figure(figsize=(10, 8))
-plt.plot(x, y, 'b-', linewidth=2, label='Airfoil')
-plt.axis('equal')
-plt.grid(True)
+plt.contour(X, Y, psi_total, levels=50, colors='blue')  # streamlines
 plt.xlabel('X')
 plt.ylabel('Y')
-plt.title('Test circle visualization')
-plt.legend()
+plt.title('U.F. + S.')
+plt.grid(True)
+plt.axis('equal')
 plt.show()
