@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from thin_airfoil_theory import ThinAirfoil
-from potential_flows import UniformFlow, Source, Doublet
+from thin_airfoil_theory import *
+from potential_flows import *
 
 
 def test_thin_airfoil():
@@ -25,24 +25,14 @@ def demo_potential_flows():
     print("Potential flows demo")
     print("=" * 40)
 
-    uniform = UniformFlow(u_inf=1.0, alpha=0)
-    source = Source(strength=2.0, x=0, y=0)
-    #doublet = Doublet(strength=3, x=0, y=0)
+    flow = FlowModel()
 
-    x = np.linspace(-2, 2, 100)
-    y = np.linspace(-2, 2, 100)
-    X, Y = np.meshgrid(x, y)
+    flow.add_component(UniformFlow(strength=15.0, alpha=np.radians(0)))
+    flow.add_component(SourceSink(strength=100.0, dx=-3.0, dy=0.0))
+    flow.add_component(SourceSink(strength=-100.0, dx=3.0, dy=0.0))
+    #flow.add_component(Doublet(strength=15.0, dx=0.0, dy=0.0))
 
-    psi_total = uniform.stream_function(X, Y) + source.stream_function(X, Y)
-
-    plt.figure(figsize=(8, 6))
-    plt.contour(X, Y, psi_total, levels=50, colors='blue')
-    plt.xlabel('X')
-    plt.ylabel('Y')
-    plt.title('Potential flows demo')
-    plt.grid(True)
-    plt.axis('equal')
-    plt.show()
+    flow.plot(xlim=(-5, 5), ylim=(-5, 5), resolution=200)
 
 if __name__ == "__main__":
     #test_thin_airfoil()

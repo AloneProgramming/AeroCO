@@ -2,57 +2,114 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-class UniformFlow:
-    def __init__(self, u_inf=1.0, alpha=0.0):
-        self.u_inf = u_inf
-        self.alpha = np.radians(alpha)
-
-    def velocity(self, x, y):
-        u = self.u_inf * np.cos(self.alpha)
-        v = self.u_inf * np.sin(self.alpha)
-        return u, v
-
-    def stream_function(self, x, y):
-        return self.u_inf * (y * np.cos(self.alpha) - x * np.sin(self.alpha))
-
-
-class Source:
-    def __init__(self, strength, x, y):
+class FlowComponent:
+    def __init__(self, strength, dx=0, dy=0):
         self.strength = strength
-        self.x, self.y = x, y
+        self.dx = dx
+        self.dy = dy
 
-    def velocity(self, x, y):
-        dx, dy = x - self.x, y - self.y
-        r = np.sqrt(dx ** 2 + dy ** 2)
+    def velocity_field(self, X, Y):
+        return np.zeros_like(X), np.zeros_like(Y)
 
-        u = np.where(r == 0, 0, (self.strength / (2 * np.pi)) * (dx / r ** 2))
-        v = np.where(r == 0, 0, (self.strength / (2 * np.pi)) * (dy / r ** 2))
-        return u, v
+    def stream_function(self, X):
+        return np.zeros_like(X)
 
-    def stream_function(self, x, y):
-        dx, dy = x - self.x, y - self.y
-        return (self.strength / (2 * np.pi)) * np.arctan2(dy, dx)
+    def _shifted_coordinates(self, X, Y):
+        return X - self.dx, Y - self.dy
 
 
-class Doublet:
-    def __init__(self, strength, x, y):
+class UniformFlow(FlowComponent):
+    def __init__(self, strength, alpha=0, dx=0, dy=0):
+        super().__init__(strength, dx, dy)
         self.strength = strength
-        self.x, self.y = x, y
+        self.alpha = alpha
 
-    def velocity(self, x, y):
-        dx, dy = x - self.x, y - self.y
-        r_sq = dx ** 2 + dy ** 2
+    def velocity_field(self, X, Y):
+        u = self.strength * np.cos(self.alpha)
+        v = self.strength * np.sin(self.alpha)
+        return u * np.ones_like(X), v * np.ones_like(Y)
 
-        u = np.where(r_sq == 0, 0, (-self.strength / (2 * np.pi)) * (dx ** 2 - dy ** 2) / r_sq ** 2)
-        v = np.where(r_sq == 0, 0, (-self.strength / (2 * np.pi)) * (2 * dx * dy) / r_sq ** 2)
+    def stream_function(self, X, Y):
+        return self.strength * (Y * np.cos(self.alpha) - X * np.sin(self.alpha))
+
+
+class SourceSink(FlowComponent):
+    def velocity_field(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        u = (self.strength / (2 * np.pi)) * X_shifted / r_sq
+        v = (self.strength / (2 * np.pi)) * Y_shifted / r_sq
         return u, v
 
-    def stream_function(self, x, y):
-        dx, dy = x - self.x, y - self.y
-        r_sq = dx ** 2 + dy ** 2
+    def stream_function(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        return (self.strength / (2 * np.pi)) * np.arctan2(Y_shifted, X_shifted)
 
-        psi = np.where(r_sq == 0, 0, (-self.strength / (2 * np.pi)) * (dy / r_sq))
-        return psi
+class Doublet(FlowComponent):
+    def velocity_field(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        factor = self.strength / r_sq ** 2
+        u = factor * (X_shifted ** 2 - Y_shifted ** 2)
+        v = factor * (2 * X_shifted * Y_shifted)
+        return u, v
 
-if __name__ == "__main__":
-    print("Visualisation moved to main.py.")
+    def stream_function(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        return (-self.strength * Y_shifted) / 2 * np.pi * r_sq
+
+
+class FlowModel:
+    def __init__(self, components=None):
+        self.components = components if components is not None else []
+
+    def add_component(self, component):
+        self.components.append(component)
+
+    def velocity_field(self, X, Y):
+        u_total = np.zeros_like(X)
+        v_total = np.zeros_like(Y)
+
+        for comp in self.components:
+            u, v = comp.velocity_field(X, Y)
+            u_total += u
+            v_total += v
+
+        return u_total, v_total
+
+    def stream_function(self, X, Y):
+        psi_total = np.zeros_like(X)
+
+        for comp in self.components:
+            psi_total += comp.stream_function(X, Y)
+
+        return psi_total
+
+    def plot(self, xlim=(-5, 5), ylim=(-5, 5), resolution=200):
+        x = np.linspace(xlim[0], xlim[1], resolution)
+        y = np.linspace(ylim[0], ylim[1], resolution)
+        X, Y = np.meshgrid(x, y)
+
+        u, v = self.velocity_field(X, Y)
+        psi = self.stream_function(X, Y)
+
+        plt.figure(figsize=(14, 10))
+
+        plt.contour(
+            X, Y, psi,
+            levels=30,
+            colors='black',
+            linewidths=0.8,
+            linestyles='solid'
+        )
+
+        plt.title('Flow Visualization')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.gca().set_aspect('equal')
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+        plt.grid(True, linestyle=':', alpha=0.5)
+        plt.tight_layout()
+        plt.show()
