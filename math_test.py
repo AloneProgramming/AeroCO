@@ -15,18 +15,14 @@ def numerical_gradient(f, x, h=1e-8):
 
     return grad
 
-
 def quadratic_function(x):
     return x[0] ** 2 + x[1] ** 2  # f(x, y) = x² + y²
-
 
 def quadratic_function_analytical(point):
     return [2 * point[0], 2 * point[1]]
 
-
 def linear_combination(x):
     return x[0] * x[1] + x[1] * x[2] + x[2] * x[0]  # f(x, y, z) = x*y + y*z + z*x
-
 
 def linear_combination_analytical(point):
     return [point[1] + point[2], point[0] + point[2], point[1] + point[0]]
@@ -73,10 +69,31 @@ def plot_gradient_demo(f, x_range, y_range, point):
     plt.axis('equal')
     plt.show()
 
-point = [5, 3]
-analytical_grad = two_var_polynomial_analytical(point)
-numerical_grad = numerical_gradient(two_var_polynomial, point)
-plot_gradient_demo(two_var_polynomial, [-50, 50], [-50, 50], point)
+def test_step_sizes(f, point, analytical_grad):
+    steps = [1e-1, 1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8, 1e-9, 1e-10, 1e-11, 1e-12]
+
+    errors = []
+    for h in steps:
+        numerical_grad = numerical_gradient(f, point, h)
+        error = np.linalg.norm(numerical_grad - analytical_grad)
+        errors.append(error)
+
+        print(f"h = {h:.1e}, error = {error:.2e}")
+
+    plt.figure(figsize=(10, 6))
+    plt.loglog(steps, errors, 'Red', linewidth=2)
+    plt.xlabel('h')
+    plt.ylabel('Error')
+    plt.title('Err(h)')
+    plt.grid(True)
+    plt.show()
+
+point = [2, 3]
+mesh_size = [-5, 5]
+analytical_grad = trigonometric_combination_analytical(point)
+numerical_grad = numerical_gradient(trigonometric_combination, point)
+plot_gradient_demo(trigonometric_combination, mesh_size, mesh_size, point)
+test_step_sizes(trigonometric_combination, point, analytical_grad)
 
 print(f"Point: {point}")
 print(f"Analytical gradient: {analytical_grad}")
