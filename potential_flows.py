@@ -45,6 +45,7 @@ class SourceSink(FlowComponent):
         X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
         return (self.strength / (2 * np.pi)) * np.arctan2(Y_shifted, X_shifted)
 
+
 class Doublet(FlowComponent):
     def velocity_field(self, X, Y):
         X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
@@ -58,6 +59,20 @@ class Doublet(FlowComponent):
         X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
         r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
         return (-self.strength * Y_shifted) / 2 * np.pi * r_sq
+
+
+class Vortex(FlowComponent):
+    def velocity_field(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        u = (-self.strength / (2 * np.pi)) * Y_shifted / r_sq
+        v = (self.strength / (2 * np.pi)) * X_shifted / r_sq
+        return u, v
+
+    def stream_function(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        return (-self.strength / (2 * np.pi)) * np.log(np.sqrt(r_sq))
 
 
 class FlowModel:
@@ -86,30 +101,26 @@ class FlowModel:
 
         return psi_total
 
-    def plot(self, xlim=(-5, 5), ylim=(-5, 5), resolution=200):
+    def plot_velocity_field(self, xlim=(-5, 5), ylim=(-5, 5), resolution=50):
         x = np.linspace(xlim[0], xlim[1], resolution)
         y = np.linspace(ylim[0], ylim[1], resolution)
         X, Y = np.meshgrid(x, y)
 
+        plt.figure(figsize=(11, 10))
+
         u, v = self.velocity_field(X, Y)
+        #plt.quiver(X, Y, u, v, scale=20, color='blue', alpha=0.6)
+
         psi = self.stream_function(X, Y)
+        plt.contour(X, Y, psi, levels=20, colors='black', linewidths=0.8)
 
-        plt.figure(figsize=(14, 10))
+        speed = np.sqrt(u ** 2 + v ** 2)
+        plt.contourf(X, Y, speed, levels=20, alpha=0.5, cmap='viridis')
+        plt.colorbar(label='Speed')
 
-        plt.contour(
-            X, Y, psi,
-            levels=30,
-            colors='black',
-            linewidths=0.8,
-            linestyles='solid'
-        )
-
-        plt.title('Flow Visualization')
+        plt.title('Velocity Field Visualization')
         plt.xlabel('X')
         plt.ylabel('Y')
         plt.gca().set_aspect('equal')
-        plt.xlim(xlim)
-        plt.ylim(ylim)
-        plt.grid(True, linestyle=':', alpha=0.5)
-        plt.tight_layout()
+        plt.grid(True, alpha=0.3)
         plt.show()

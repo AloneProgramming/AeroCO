@@ -27,12 +27,13 @@ def demo_potential_flows():
 
     flow = FlowModel()
 
-    flow.add_component(UniformFlow(strength=15.0, alpha=np.radians(0)))
-    flow.add_component(SourceSink(strength=100.0, dx=-3.0, dy=0.0))
-    flow.add_component(SourceSink(strength=-100.0, dx=3.0, dy=0.0))
+    flow.add_component(UniformFlow(strength=5.0, alpha=np.radians(0)))
+    #flow.add_component(SourceSink(strength=15.0, dx=-3.0, dy=0.0))
+    #flow.add_component(SourceSink(strength=-15.0, dx=3.0, dy=0.0))
     #flow.add_component(Doublet(strength=15.0, dx=0.0, dy=0.0))
+    flow.add_component(Vortex(strength=10.0, dx=0.0, dy=0.0))
 
-    flow.plot(xlim=(-5, 5), ylim=(-5, 5), resolution=200)
+    flow.plot_velocity_field(xlim=(-5, 5), ylim=(-5, 5), resolution=200)
 
 if __name__ == "__main__":
     #test_thin_airfoil()
