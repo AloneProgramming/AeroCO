@@ -1,5 +1,3 @@
-import numpy as np
-import matplotlib.pyplot as plt
 from thin_airfoil_theory import *
 from potential_flows import *
 
