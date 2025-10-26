@@ -101,6 +101,13 @@ class FlowModel:
 
         return psi_total
 
+    def pressure_coefficient(self, X, Y, U_inf=1.0):
+        u, v = self.velocity_field(X, Y)
+        V_sq = u ** 2 + v ** 2
+        Cp = 1.0 - V_sq / (U_inf ** 2)
+        return Cp
+
+
     def plot_velocity_field(self, xlim=(-5, 5), ylim=(-5, 5), resolution=50):
         x = np.linspace(xlim[0], xlim[1], resolution)
         y = np.linspace(ylim[0], ylim[1], resolution)
@@ -123,4 +130,27 @@ class FlowModel:
         plt.ylabel('Y')
         plt.gca().set_aspect('equal')
         plt.grid(True, alpha=0.3)
+        plt.show()
+
+    def plot_pressure_field(self, xlim=(-5, 5), ylim=(-5, 5), resolution=200, U_inf=1.0):
+        x = np.linspace(xlim[0], xlim[1], resolution)
+        y = np.linspace(ylim[0], ylim[1], resolution)
+        X, Y = np.meshgrid(x, y)
+
+        Cp = self.pressure_coefficient(X, Y, U_inf)
+
+        plt.figure(figsize=(11, 10))
+
+        contour = plt.contourf(X, Y, Cp, levels=50, cmap='coolwarm', vmin=-10.0)
+        plt.colorbar(contour, label='Pressure Coefficient')
+
+        plt.contour(X, Y, Cp, levels=20, colors='black', linewidths=0.5, alpha=0.5)
+
+        psi = self.stream_function(X, Y)
+        plt.contour(X, Y, psi, levels=20, colors='white', linewidths=0.8, alpha=0.3)
+
+        plt.title('Pressure Coefficient Field')
+        plt.xlabel('X')
+        plt.ylabel('Y')
+        plt.gca().set_aspect('equal')
         plt.show()
