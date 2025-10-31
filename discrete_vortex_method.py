@@ -66,12 +66,55 @@ class DiscreteVortexAirfoil:
             print(f"Г = {self.circulations}")
             print(f"Г summ = {np.sum(self.circulations):.6f}")
 
-    def calculate_aerodynamics(self):
+    def plot_basic_results(self):
+        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
+        axes[0, 0].plot(self.vortex_positions, self.circulations, 'bo-', linewidth=2)
+        axes[0, 0].set_xlabel('x/c')
+        axes[0, 0].set_ylabel('Circulatuion Γ')
+        axes[0, 0].set_title('Г distribution along chord')
+        axes[0, 0].grid(True)
+
+        theta_analytic = np.linspace(0, np.pi, 100)
+        x_analytic = 0.5 * (1 - np.cos(theta_analytic))
+        gamma_analytic = 2 * self.U_inf * (1 + np.cos(theta_analytic)) / np.sin(theta_analytic) * self.alpha
+
+        axes[0, 1].plot(x_analytic, gamma_analytic, 'r-', label='Analytical')
+        axes[0, 1].plot(self.vortex_positions, self.circulations, 'bo-', label='Numerical')
+        axes[0, 1].set_xlabel('x/c')
+        axes[0, 1].set_ylabel('γ(θ)')
+        axes[0, 1].set_title('Compassion (analytical vs numerical)')
+        axes[0, 1].legend()
+        axes[0, 1].grid(True)
+
+        axes[1, 0].plot(self.control_points, np.zeros_like(self.control_points), 'ro', label='Control points')
+        axes[1, 0].plot(self.vortex_positions, np.zeros_like(self.vortex_positions), 'b^', label='Vortices')
+        axes[1, 0].set_xlabel('x/c')
+        axes[1, 0].set_ylabel('y/c')
+        axes[1, 0].set_title('Geometry')
+        axes[1, 0].legend()
+        axes[1, 0].grid(True)
+        axes[1, 0].axis('equal')
+
+        im = axes[1, 1].imshow(self.A, cmap='coolwarm', aspect='auto')
+        axes[1, 1].set_title('Influence matrix A')
+        axes[1, 1].set_xlabel('Vortex index')
+        axes[1, 1].set_ylabel('Control point vortex')
+        plt.colorbar(im, ax=axes[1, 1])
+
+        plt.tight_layout()
+        plt.show()
+
+    def calculate_aerodynamics(self):
         total_circulation = np.sum(self.circulations)
         self.Cl = 2.0 * total_circulation / self.U_inf
+        self.Cm_LE = -2.0 * np.sum(self.circulations * self.vortex_positions) / self.U_inf
+        x_ac = 0.25 * self.chord
+        self.Cm_AC = self.Cm_LE + self.Cl * x_ac
 
-        print(f"Cl(numerical) = {self.Cl:.6f}")
-        print(f"Cl(analytical) = {2 * np.pi * -self.alpha:.6f}")
+        print(f"Cl = {self.Cl:.6f}")
+        print(f"Cm_LE = {self.Cm_LE:.6f}")
+        print(f"Cm_AC = {self.Cm_AC:.6f}")
 
-airfoil = DiscreteVortexAirfoil(alpha_degrees=10, debug=False)
+airfoil = DiscreteVortexAirfoil(alpha_degrees=10, debug=True)
+airfoil.plot_basic_results()
