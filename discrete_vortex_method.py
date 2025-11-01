@@ -18,7 +18,7 @@ class DiscreteVortexAirfoil:
         self.calculate_influence_matrix()
         self.calculate_rhs()
         self.solve_circulation()
-        self.calculate_aerodynamics()
+        #self.calculate_aerodynamics()
 
     def compute_gradient(self, y, x):
         n = len(y)
@@ -102,7 +102,7 @@ class DiscreteVortexAirfoil:
                 tangent_slope = self.dz_dx[i]
                 surface_angle = np.arctan(tangent_slope)
                 effective_alpha = self.alpha - surface_angle
-                b_values[i] = -self.U_inf * np.sin(effective_alpha)  # ЗДЕСЬ ИСПРАВЛЕНИЕ
+                b_values[i] = -self.U_inf * np.sin(effective_alpha)
         else:
             b_values = -self.U_inf * (self.alpha - self.dz_dx)
 
@@ -166,14 +166,29 @@ class DiscreteVortexAirfoil:
         x_ac = 0.25 * self.chord
         self.Cm_AC = self.Cm_LE + self.Cl * x_ac
 
-        print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f}; Cl(analytical) = {2 * np.pi * (self.alpha + 2 * 0.05):.6f}")
+        #print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f}; Cl(analytical) = {2 * np.pi * (self.alpha + 2 * 0.05):.6f}")
         #print(f"Cm_LE = {self.Cm_LE:.6f}")
         #print(f"Cm_AC = {self.Cm_AC:.6f}")
+        return self.Cl
 
-alpha = np.linspace(0, 10, 11)
+alpha = 5
+h = 0.05
 
-#for i in alpha:
-#    airfoil = DiscreteVortexAirfoil(alpha_degrees=i, debug=False, camber_func=parabolic_camber(h=0.05))
+panels = [5, 10, 20, 40, 80, 160, 320]
+Cl_numerical = np.array([])
+Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + 2 * h))
 
-airfoil = DiscreteVortexAirfoil(alpha_degrees=5, debug=False, camber_func=parabolic_camber(h=0.05))
-airfoil.plot_basic_results()
+for i in panels:
+    airfoil = DiscreteVortexAirfoil(alpha_degrees=alpha, n_panels=i, debug=False, camber_func=parabolic_camber(h=h))
+    Cl_numerical = np.append(Cl_numerical, -airfoil.calculate_aerodynamics())
+
+plt.plot(panels, Cl_numerical, marker='o', linestyle='-', color='red', label='D.V.M.')
+plt.plot(panels, Cl_analytical, marker='', linestyle='--', color='black', label='Analytical')
+
+plt.title('Grid sensitivity')
+plt.xlabel('Number of panels')
+plt.ylabel('Cl')
+plt.grid(True)
+plt.legend()
+
+plt.show()
