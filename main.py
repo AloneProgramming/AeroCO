@@ -25,7 +25,7 @@ def demo_parabolic_airfoil():
     def dz_dx_parabolic(x):
         return 4 * h * (1 - 2 * x)
 
-    airfoil = ThinAirfoil(alpha_degrees=5.0)
+    airfoil = ThinAirfoil(alpha_degrees=10.0)
     Cl, Cm_LE, Cm_AC, A0, A1, A2 = airfoil.calculate_coefficients(dz_dx_parabolic)
 
     print("Parabolic airfoil results:")
@@ -39,7 +39,7 @@ def demo_parabolic_airfoil():
     Cl_analytical = 2 * np.pi * (airfoil.alpha + 2 * h)
     print(f"Cl (analytical): {Cl_analytical:.4f}")
 
-    airfoil.plot_airfoil(dz_dx_parabolic)
+    #airfoil.plot_airfoil(dz_dx_parabolic)
 
 def demo_potential_flows():
     print("Potential flows demo")

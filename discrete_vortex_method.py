@@ -1,13 +1,17 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from camber_functions import *
+
 
 class DiscreteVortexAirfoil:
-    def __init__(self, chord=1.0, alpha_degrees=5.0, n_panels=20, U_inf=1.0, debug=True):
+    def __init__(self, chord=1.0, alpha_degrees=5.0, n_panels=20, U_inf=1.0,
+                 camber_func=None, debug=True):
         self.chord = chord
-        self.alpha = -np.radians(alpha_degrees)
+        self.alpha = np.radians(alpha_degrees)
         self.n_panels = n_panels
-        self.debug = debug
         self.U_inf = U_inf
+        self.camber_func = camber_func
+        self.debug = debug
 
         self.setup_geometry()
         self.setup_vortices()
@@ -16,15 +20,39 @@ class DiscreteVortexAirfoil:
         self.solve_circulation()
         self.calculate_aerodynamics()
 
+    def compute_gradient(self, y, x):
+        n = len(y)
+        dydx = np.zeros(n)
+
+        if n == 1:
+            return dydx
+
+        dydx[0] = (y[1] - y[0]) / (x[1] - x[0])
+
+        for i in range(1, n - 1):
+            dydx[i] = (y[i + 1] - y[i - 1]) / (x[i + 1] - x[i - 1])
+
+        dydx[-1] = (y[-1] - y[-2]) / (x[-1] - x[-2])
+
+        return dydx
+
     def setup_geometry(self):
         self.x_nodes = np.linspace(0, self.chord, self.n_panels + 1)
+
         self.control_points = self.x_nodes[:-1] + 0.75 * (self.x_nodes[1:] - self.x_nodes[:-1])
-        self.dz_dx = np.zeros_like(self.control_points)
+
+        if self.camber_func is not None:
+            self.z_control = self.camber_func(self.control_points)
+            self.dz_dx = self.compute_gradient(self.z_control, self.control_points)
+        else:
+            self.z_control = np.zeros_like(self.control_points)
+            self.dz_dx = np.zeros_like(self.control_points)
 
         if self.debug:
             print("Geometry setup is done.")
             print(f"Nodes: {self.x_nodes}")
             print(f"Control points: {self.control_points}")
+            print(f"dz/dx: {self.dz_dx}")
 
     def setup_vortices(self):
         self.vortex_positions = self.x_nodes[:-1] + 0.25 * (self.x_nodes[1:] - self.x_nodes[:-1])
@@ -37,22 +65,48 @@ class DiscreteVortexAirfoil:
         self.A = np.zeros((self.n_panels, self.n_panels))
 
         for i in range(self.n_panels):
+            if self.camber_func is not None:
+                tangent_slope = self.dz_dx[i]
+                nx = -tangent_slope / np.sqrt(1 + tangent_slope ** 2)
+                nz = 1.0 / np.sqrt(1 + tangent_slope ** 2)
+            else:
+                nx, nz = 0.0, 1.0
+
             for j in range(self.n_panels):
-                dx = self.control_points[i] - self.vortex_positions[j]
-                dy = 0.0
+                x_v = self.vortex_positions[j]
+                if self.camber_func is not None:
+                    z_v = self.camber_func(x_v)
+                else:
+                    z_v = 0.0
 
-                r_sq = dx**2 + dy**2
+                dx = self.control_points[i] - x_v
+                dz = self.z_control[i] - z_v
 
+                r_sq = dx ** 2 + dz ** 2
+
+                u_ij = (-1.0 / (2 * np.pi)) * dz / r_sq
                 w_ij = (1.0 / (2 * np.pi)) * dx / r_sq
 
-                self.A[i, j] = w_ij
+                normal_velocity = u_ij * nx + w_ij * nz
+
+                self.A[i, j] = normal_velocity
 
         if self.debug:
             print("Influence matrix is calculated.")
             print(f"Matrix size: {self.A.shape}")
 
     def calculate_rhs(self):
-        self.b = - self.U_inf * (self.alpha - self.dz_dx)
+        if self.camber_func is not None:
+            b_values = np.zeros(self.n_panels)
+            for i in range(self.n_panels):
+                tangent_slope = self.dz_dx[i]
+                surface_angle = np.arctan(tangent_slope)
+                effective_alpha = self.alpha - surface_angle
+                b_values[i] = -self.U_inf * np.sin(effective_alpha)  # ЗДЕСЬ ИСПРАВЛЕНИЕ
+        else:
+            b_values = -self.U_inf * (self.alpha - self.dz_dx)
+
+        self.b = b_values
 
         if self.debug:
             print("RHS is calculated.")
@@ -112,9 +166,14 @@ class DiscreteVortexAirfoil:
         x_ac = 0.25 * self.chord
         self.Cm_AC = self.Cm_LE + self.Cl * x_ac
 
-        print(f"Cl = {self.Cl:.6f}")
-        print(f"Cm_LE = {self.Cm_LE:.6f}")
-        print(f"Cm_AC = {self.Cm_AC:.6f}")
+        print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f}; Cl(analytical) = {2 * np.pi * (self.alpha + 2 * 0.05):.6f}")
+        #print(f"Cm_LE = {self.Cm_LE:.6f}")
+        #print(f"Cm_AC = {self.Cm_AC:.6f}")
 
-airfoil = DiscreteVortexAirfoil(alpha_degrees=10, debug=True)
+alpha = np.linspace(0, 10, 11)
+
+#for i in alpha:
+#    airfoil = DiscreteVortexAirfoil(alpha_degrees=i, debug=False, camber_func=parabolic_camber(h=0.05))
+
+airfoil = DiscreteVortexAirfoil(alpha_degrees=5, debug=False, camber_func=parabolic_camber(h=0.05))
 airfoil.plot_basic_results()
