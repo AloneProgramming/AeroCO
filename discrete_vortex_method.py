@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from camber_functions import *
+from camber_functions import parabolic_camber, naca_4_digit_camber
 
 
 class DiscreteVortexAirfoil:
@@ -161,21 +161,25 @@ class DiscreteVortexAirfoil:
 
     def calculate_aerodynamics(self):
         total_circulation = np.sum(self.circulations)
-        self.Cl = 2.0 * total_circulation / self.U_inf
-        self.Cm_LE = -2.0 * np.sum(self.circulations * self.vortex_positions) / self.U_inf
-        x_ac = 0.25 * self.chord
-        self.Cm_AC = self.Cm_LE + self.Cl * x_ac
+        self.Cl_n = 2.0 * total_circulation / self.U_inf
+        self.Cl_a = 2 * np.pi * (self.alpha + np.atan(self.camber_func.m / (1 - self.camber_func.p)))
+        #self.Cm_LE = -2.0 * np.sum(self.circulations * self.vortex_positions) / self.U_inf
+        #x_ac = 0.25 * self.chord
+        #self.Cm_AC = self.Cm_LE + self.Cl * x_ac
 
-        print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f};")
-        print(f"Cm_LE = {self.Cm_LE:.6f}")
-        print(f"Cm_AC = {self.Cm_AC:.6f}")
-        return self.Cl
+        print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl_n:.4f}; Cl(analytical) = "
+              f"{self.Cl_a:.4f}")
+        #print(f"Cm_LE = {self.Cm_LE:.6f}")
+        #print(f"Cm_AC = {self.Cm_AC:.6f}")
+        return self.Cl_n, self.Cl_a
 
     def grid_sensitivity(self, alpha, camber_func):
         self.panels = [5, 10, 20, 40, 80, 160, 320]
         self.Cl_numerical = np.array([])
-        self.Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + 2 * camber_func.h))
-
+        #self.Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + 2 * camber_func.h)) #  parabolic camber
+        #self.Cl_analytical = np.full(7, 2 * np.pi * np.radians(alpha)) #  symmetric airfoil
+        self.Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + np.atan(camber_func.m / (1 - camber_func.p))))
+        #self.Cl_analytical = np.full(7, 1)
         for i in self.panels:
             airfoil = DiscreteVortexAirfoil(debug=False, alpha_degrees=alpha, n_panels=i, camber_func=camber_func)
             self.Cl_numerical = np.append(self.Cl_numerical, -airfoil.calculate_aerodynamics())
@@ -191,5 +195,19 @@ class DiscreteVortexAirfoil:
 
         plt.show()
 
-airfoil = DiscreteVortexAirfoil(debug=False)
-airfoil.grid_sensitivity(alpha=6, camber_func=parabolic_camber(h=0.1))
+alpha = np.linspace(0, 10, 11)
+Cl_n = np.array([])
+Cl_a = np.array([])
+for i in alpha:
+    airfoil = DiscreteVortexAirfoil(debug=False, alpha_degrees=i, n_panels=100, camber_func=naca_4_digit_camber(code="4412"))
+    Cl_n0, Cl_a0 = airfoil.calculate_aerodynamics()
+    Cl_n = np.append(Cl_n, -Cl_n0)
+    Cl_a = np.append(Cl_a, Cl_a0)
+plt.plot(alpha, Cl_n, marker='o', linestyle='-', color='red', label='Curent numerical')
+plt.plot(alpha, Cl_a, marker='', linestyle='-', color='black', label='NACA 4-digit analytical')
+plt.title('NACA 4-digit analysis')
+plt.xlabel('Angle of attack')
+plt.ylabel('Cl')
+plt.grid(True)
+plt.legend()
+plt.show()
