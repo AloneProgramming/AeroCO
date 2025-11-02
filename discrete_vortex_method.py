@@ -166,29 +166,30 @@ class DiscreteVortexAirfoil:
         x_ac = 0.25 * self.chord
         self.Cm_AC = self.Cm_LE + self.Cl * x_ac
 
-        #print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f}; Cl(analytical) = {2 * np.pi * (self.alpha + 2 * 0.05):.6f}")
-        #print(f"Cm_LE = {self.Cm_LE:.6f}")
-        #print(f"Cm_AC = {self.Cm_AC:.6f}")
+        print(f"AOA = {np.degrees(self.alpha):.0f}°; Cl(numerical) = {-self.Cl:.6f};")
+        print(f"Cm_LE = {self.Cm_LE:.6f}")
+        print(f"Cm_AC = {self.Cm_AC:.6f}")
         return self.Cl
 
-alpha = 5
-h = 0.05
+    def grid_sensitivity(self, alpha, camber_func):
+        self.panels = [5, 10, 20, 40, 80, 160, 320]
+        self.Cl_numerical = np.array([])
+        self.Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + 2 * camber_func.h))
 
-panels = [5, 10, 20, 40, 80, 160, 320]
-Cl_numerical = np.array([])
-Cl_analytical = np.full(7, 2 * np.pi * (np.radians(alpha) + 2 * h))
+        for i in self.panels:
+            airfoil = DiscreteVortexAirfoil(debug=False, alpha_degrees=alpha, n_panels=i, camber_func=camber_func)
+            self.Cl_numerical = np.append(self.Cl_numerical, -airfoil.calculate_aerodynamics())
 
-for i in panels:
-    airfoil = DiscreteVortexAirfoil(alpha_degrees=alpha, n_panels=i, debug=False, camber_func=parabolic_camber(h=h))
-    Cl_numerical = np.append(Cl_numerical, -airfoil.calculate_aerodynamics())
+        plt.plot(self.panels, self.Cl_numerical, marker='o', linestyle='-', color='red', label='D.V.M.')
+        plt.plot(self.panels, self.Cl_analytical, marker='', linestyle='--', color='black', label='Analytical')
 
-plt.plot(panels, Cl_numerical, marker='o', linestyle='-', color='red', label='D.V.M.')
-plt.plot(panels, Cl_analytical, marker='', linestyle='--', color='black', label='Analytical')
+        plt.title('Grid sensitivity')
+        plt.xlabel('Number of panels')
+        plt.ylabel('Cl')
+        plt.grid(True)
+        plt.legend()
 
-plt.title('Grid sensitivity')
-plt.xlabel('Number of panels')
-plt.ylabel('Cl')
-plt.grid(True)
-plt.legend()
+        plt.show()
 
-plt.show()
+airfoil = DiscreteVortexAirfoil(debug=False)
+airfoil.grid_sensitivity(alpha=6, camber_func=parabolic_camber(h=0.1))
