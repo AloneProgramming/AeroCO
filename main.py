@@ -1,65 +1,132 @@
-from thin_airfoil_theory import *
-from potential_flows import *
+import numpy as np
+import matplotlib.pyplot as plt
+import neuralfoil as nf
+import aerosandbox as asb
+from core.airfoil import AirfoilAnalysis
+from core.potential_flows import FlowModel, UniformFlow, Vortex, Doublet
+from core.camber_functions import parabolic_camber, naca_4_digit_camber
+from methods.thin_airfoil import ThinAirfoilTheory
+from methods.discrete_vortex import DiscreteVortexMethod
 
 
-def demo_symmetric_airfoil():
-    print("Thin Airfoil Theory")
-    print("=" * 40)
+def calculate_airfoil_performance(airfoil_type="naca", code="0012",
+                                  alpha_range=(-5, 15, 5), panels=100):
+    print(f"Calculating {airfoil_type} {code} airfoil performance...")
 
-    for alpha_deg in [0, 5, 10]:
-        airfoil = ThinAirfoil(alpha_degrees=alpha_deg)
-        Cl, Cm_LE, Cm_AC, A0, A1, A2 = airfoil.calculate_coefficients()
+    if airfoil_type == "naca":
+        camber_func = naca_4_digit_camber(code=code)
+        nf_airfoil = asb.Airfoil("naca" + code)
+    elif airfoil_type == "parabolic":
+        camber_func = parabolic_camber(h=0.05)
+    else:
+        camber_func = None
 
-        print(f"\nAOA: {alpha_deg}°")
-        print(f"Cl = {Cl:.4f}")
-        print(f"Cm_AC = {Cm_AC:.4f}")
+    alpha_values = np.arange(alpha_range[0], alpha_range[1] + 1, alpha_range[2])
+    cl_dvm = []
 
-    airfoil = ThinAirfoil(alpha_degrees=5.0)
-    Cl, Cm_LE, Cm_AC, A0, A1, A2 = airfoil.calculate_coefficients()
-    airfoil.plot_results(Cl, Cm_LE, Cm_AC, A0, A1, A2)
+    for alpha in alpha_values:
+        dvm = DiscreteVortexMethod(
+            alpha_degrees=alpha,
+            n_panels=panels,
+            camber_func=camber_func,
+            debug=False
+        )
+        cl, _ = dvm.calculate_aerodynamics()
+        cl_dvm.append(cl)
+
+    cl_nf = []
+
+    if airfoil_type == "naca":
+        for alpha in alpha_values:
+            cl = nf_airfoil.get_aero_from_neuralfoil(alpha=alpha, Re=3e5, model_size="xxxlarge")
+            cl_nf.append(cl['CL'])
+
+    if camber_func:
+        tat = ThinAirfoilTheory(camber_func=camber_func)
+        cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
+    else:
+        tat = ThinAirfoilTheory()
+        cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(alpha_values, cl_dvm, 'bo-', label='Discrete Vortex Method')
+    plt.plot(alpha_values, cl_tat, 'r--', label='Thin Airfoil Theory')
+    plt.plot(alpha_values, cl_nf, 'black', label='NeuralFoil')
+    plt.xlabel('Angle of Attack (degrees)')
+    plt.ylabel('Lift Coefficient Cl')
+    plt.title(f'{airfoil_type.upper()} {code} Airfoil Performance')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    return alpha_values, cl_dvm, cl_tat
 
 
-def demo_parabolic_airfoil():
-    h = 0.05  # max camber height
+def analyze_single_condition(airfoil_type="naca", code="4412",
+                             alpha=5.0, panels=80):
+    print(f"Analyzing {airfoil_type} {code} at {alpha}°...")
 
-    def dz_dx_parabolic(x):
-        return 4 * h * (1 - 2 * x)
+    if airfoil_type == "naca":
+        camber_func = naca_4_digit_camber(code=code)
+    else:
+        camber_func = parabolic_camber(h=0.05)
 
-    airfoil = ThinAirfoil(alpha_degrees=10.0)
-    Cl, Cm_LE, Cm_AC, A0, A1, A2 = airfoil.calculate_coefficients(dz_dx_parabolic)
+    dvm = DiscreteVortexMethod(
+        alpha_degrees=alpha,
+        n_panels=panels,
+        camber_func=camber_func,
+        debug=False
+    )
 
-    print("Parabolic airfoil results:")
-    print(f"AOA: {np.degrees(airfoil.alpha):.1f}°")
-    print(f"h: {h}")
-    print(f"A0: {A0:.4f}, A1: {A1:.4f}, A2: {A2:.4f}")
-    print(f"Cl: {Cl:.4f}")
-    print(f"Cm_LE: {Cm_LE:.4f}")
-    print(f"Cm_AC: {Cm_AC:.4f}")
+    dvm.plot_detailed_results()
+    cl, cm = dvm.calculate_aerodynamics()
 
-    Cl_analytical = 2 * np.pi * (airfoil.alpha + 2 * h)
-    print(f"Cl (analytical): {Cl_analytical:.4f}")
+    print(f"Results: Cl = {cl:.4f}, Cm = {cm:.4f}")
+    return dvm
 
-    #airfoil.plot_airfoil(dz_dx_parabolic)
 
-def demo_potential_flows():
-    print("Potential flows demo")
-    print("=" * 40)
+def grid_convergence_study(airfoil_type="naca", code="0012", alpha=5.0):
+    print("Running grid convergence study...")
 
-    flow = FlowModel()
+    if airfoil_type == "naca":
+        camber_func = naca_4_digit_camber(code=code)
+    else:
+        camber_func = None
 
-    U_inf = 5.0
+    panel_counts = [10, 20, 40, 80, 160]
+    cl_values = []
 
-    flow.add_component(UniformFlow(strength=U_inf, alpha=np.radians(0)))
-    # flow.add_component(SourceSink(strength=15.0, dx=-3.0, dy=0.0))
-    # flow.add_component(SourceSink(strength=-15.0, dx=3.0, dy=0.0))
-    # flow.add_component(Doublet(strength=15.0, dx=0.0, dy=0.0))
-    flow.add_component(Vortex(strength=1.0, dx=0.0, dy=0.0))
+    for panels in panel_counts:
+        dvm = DiscreteVortexMethod(
+            alpha_degrees=alpha,
+            n_panels=panels,
+            camber_func=camber_func,
+            debug=False
+        )
+        cl, _ = dvm.calculate_aerodynamics()
+        cl_values.append(cl)
 
-    # flow.plot_velocity_field(xlim=(-5, 5), ylim=(-5, 5), resolution=200)
-    flow.plot_pressure_field(xlim=(-5, 5), ylim=(-5, 5), resolution=200, U_inf=U_inf)
+    theoretical_cl = 2 * np.pi * (np.radians(alpha) + np.atan(camber_func.m / (1 - camber_func.p)))
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(panel_counts, cl_values, 'bo-', label='Numerical')
+    plt.axhline(y=theoretical_cl, color='r', linestyle='--',
+                label=f'Theoretical: {theoretical_cl:.4f}')
+    plt.xlabel('Number of Panels')
+    plt.ylabel('Lift Coefficient Cl')
+    plt.title('Grid Convergence Study')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+    return panel_counts, cl_values
 
 
 if __name__ == "__main__":
-    #demo_symmetric_airfoil()
-    demo_parabolic_airfoil()
-    # demo_potential_flows()
+    calculate_airfoil_performance(airfoil_type="naca", code="4415",
+                                  alpha_range=(-5, 15, 2), panels=100)
+
+    # analyze_single_condition(airfoil_type="naca", code="4412",
+    #                       alpha=8.0, panels=120)
+
+    # grid_convergence_study(airfoil_type="naca", code="2412", alpha=5.0)

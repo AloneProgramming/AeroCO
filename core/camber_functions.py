@@ -1,9 +1,12 @@
 import numpy as np
 
+
 def parabolic_camber(h=0.05):
     def camber_func(x):
-        return 4 * h * x * (1-x)
+        return 4 * h * x * (1 - x)
+
     camber_func.h = h
+    camber_func.type = "parabolic"
     return camber_func
 
 
@@ -28,5 +31,14 @@ def naca_4_digit_camber(code="0012", chord=1.0):
     camber_func.m = m
     camber_func.p = p
     camber_func.code = code
+    camber_func.type = "naca_4_digit"
 
+    return camber_func
+
+
+def symmetric_airfoil():
+    def camber_func(x):
+        return np.zeros_like(x)
+
+    camber_func.type = "symmetric"
     return camber_func

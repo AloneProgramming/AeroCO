@@ -11,7 +11,7 @@ class FlowComponent:
     def velocity_field(self, X, Y):
         return np.zeros_like(X), np.zeros_like(Y)
 
-    def stream_function(self, X):
+    def stream_function(self, X, Y):
         return np.zeros_like(X)
 
     def _shifted_coordinates(self, X, Y):
@@ -58,7 +58,7 @@ class Doublet(FlowComponent):
     def stream_function(self, X, Y):
         X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
         r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
-        return (-self.strength * Y_shifted) / 2 * np.pi * r_sq
+        return (-self.strength * Y_shifted) / (2 * np.pi * r_sq)
 
 
 class Vortex(FlowComponent):
@@ -106,51 +106,3 @@ class FlowModel:
         V_sq = u ** 2 + v ** 2
         Cp = 1.0 - V_sq / (U_inf ** 2)
         return Cp
-
-
-    def plot_velocity_field(self, xlim=(-5, 5), ylim=(-5, 5), resolution=50):
-        x = np.linspace(xlim[0], xlim[1], resolution)
-        y = np.linspace(ylim[0], ylim[1], resolution)
-        X, Y = np.meshgrid(x, y)
-
-        plt.figure(figsize=(11, 10))
-
-        u, v = self.velocity_field(X, Y)
-        #plt.quiver(X, Y, u, v, scale=20, color='blue', alpha=0.6)
-
-        psi = self.stream_function(X, Y)
-        plt.contour(X, Y, psi, levels=20, colors='black', linewidths=0.8)
-
-        speed = np.sqrt(u ** 2 + v ** 2)
-        plt.contourf(X, Y, speed, levels=20, alpha=0.5, cmap='viridis')
-        plt.colorbar(label='Speed')
-
-        plt.title('Velocity Field Visualization')
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.gca().set_aspect('equal')
-        plt.grid(True, alpha=0.3)
-        plt.show()
-
-    def plot_pressure_field(self, xlim=(-5, 5), ylim=(-5, 5), resolution=200, U_inf=1.0):
-        x = np.linspace(xlim[0], xlim[1], resolution)
-        y = np.linspace(ylim[0], ylim[1], resolution)
-        X, Y = np.meshgrid(x, y)
-
-        Cp = self.pressure_coefficient(X, Y, U_inf)
-
-        plt.figure(figsize=(11, 10))
-
-        contour = plt.contourf(X, Y, Cp, levels=50, cmap='coolwarm', vmin=-10.0)
-        plt.colorbar(contour, label='Pressure Coefficient')
-
-        plt.contour(X, Y, Cp, levels=20, colors='black', linewidths=0.5, alpha=0.5)
-
-        psi = self.stream_function(X, Y)
-        plt.contour(X, Y, psi, levels=20, colors='white', linewidths=0.8, alpha=0.3)
-
-        plt.title('Pressure Coefficient Field')
-        plt.xlabel('X')
-        plt.ylabel('Y')
-        plt.gca().set_aspect('equal')
-        plt.show()
