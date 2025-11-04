@@ -4,7 +4,7 @@ from core.potential_flows import FlowModel, UniformFlow, Vortex, Doublet
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
 from methods.discrete_vortex import DiscreteVortexMethod
-from visualization.plot_flow import plot_velocity_field, plot_pressure_field
+from visualization.plot_flow import *
 
 def demo_thin_airfoil():
     print("Thin Airfoil Theory Demo")
@@ -24,22 +24,6 @@ def demo_thin_airfoil():
 
     Cl_analytical = 2 * np.pi * (np.radians(10.0) + 2 * h)
     print(f"Analytical Cl (same): {Cl_analytical:.4f}")
-
-
-def demo_discrete_vortex():
-    print("\nDiscrete Vortex Method Demo")
-
-    dvm = DiscreteVortexMethod(alpha_degrees=5.0, n_panels=20, debug=False)
-    cl, cm = dvm.calculate_aerodynamics()
-    print(f"Symmetric airfoil: Cl = {cl:.4f}")
-
-    camber_func = parabolic_camber(h=0.04)
-    dvm_camber = DiscreteVortexMethod(alpha_degrees=5.0, n_panels=20,
-                                      camber_func=camber_func, debug=False)
-    cl_camber, cm_camber = dvm_camber.calculate_aerodynamics()
-    print(f"Cambered airfoil: Cl = {cl_camber:.4f}")
-
-    dvm_camber.plot_detailed_results()
 
 
 def demo_potential_flows():
@@ -64,5 +48,4 @@ def demo_potential_flows():
 
 if __name__ == "__main__":
     #demo_thin_airfoil()
-    #demo_discrete_vortex()
     demo_potential_flows()

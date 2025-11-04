@@ -1,9 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import neuralfoil as nf
 import aerosandbox as asb
-from core.airfoil import AirfoilAnalysis
-from core.potential_flows import FlowModel, UniformFlow, Vortex, Doublet
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
 from methods.discrete_vortex import DiscreteVortexMethod
@@ -62,29 +59,6 @@ def calculate_airfoil_performance(airfoil_type="naca", code="0012",
     return alpha_values, cl_dvm, cl_tat
 
 
-def analyze_single_condition(airfoil_type="naca", code="4412",
-                             alpha=5.0, panels=80):
-    print(f"Analyzing {airfoil_type} {code} at {alpha}°...")
-
-    if airfoil_type == "naca":
-        camber_func = naca_4_digit_camber(code=code)
-    else:
-        camber_func = parabolic_camber(h=0.05)
-
-    dvm = DiscreteVortexMethod(
-        alpha_degrees=alpha,
-        n_panels=panels,
-        camber_func=camber_func,
-        debug=False
-    )
-
-    dvm.plot_detailed_results()
-    cl, cm = dvm.calculate_aerodynamics()
-
-    print(f"Results: Cl = {cl:.4f}, Cm = {cm:.4f}")
-    return dvm
-
-
 def grid_convergence_study(airfoil_type="naca", code="0012", alpha=5.0):
     print("Running grid convergence study...")
 
@@ -124,9 +98,6 @@ def grid_convergence_study(airfoil_type="naca", code="0012", alpha=5.0):
 
 if __name__ == "__main__":
     calculate_airfoil_performance(airfoil_type="naca", code="4415",
-                                  alpha_range=(-5, 15, 2), panels=100)
+                                   alpha_range=(-5, 15, 2), panels=100)
 
-    # analyze_single_condition(airfoil_type="naca", code="4412",
-    #                       alpha=8.0, panels=120)
-
-    # grid_convergence_study(airfoil_type="naca", code="2412", alpha=5.0)
+    #  grid_convergence_study(airfoil_type="naca", code="4415", alpha=5.0)

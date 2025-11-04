@@ -4,7 +4,7 @@ from core.airfoil import AirfoilAnalysis
 
 
 class DiscreteVortexMethod(AirfoilAnalysis):
-    def __init__(self, chord=1.0, alpha_degrees=5.0, n_panels=20,
+    def __init__(self, chord=1.0, alpha_degrees=0.0, n_panels=20,
                  U_inf=1.0, camber_func=None, debug=True):
         super().__init__("Discrete Vortex Method")
         self.chord = chord
@@ -123,45 +123,3 @@ class DiscreteVortexMethod(AirfoilAnalysis):
         }
 
         return Cl, 0.0
-
-    def plot_detailed_results(self):
-        fig, axes = plt.subplots(2, 2, figsize=(12, 10))
-
-        axes[0, 0].plot(self.vortex_positions, self.circulations, 'bo-', linewidth=2)
-        axes[0, 0].set_xlabel('x/c')
-        axes[0, 0].set_ylabel('Circulation Γ')
-        axes[0, 0].set_title('Circulation Distribution')
-        axes[0, 0].grid(True)
-
-        theta_analytic = np.linspace(0, np.pi, 100)
-        x_analytic = 0.5 * (1 - np.cos(theta_analytic))
-        gamma_analytic = 2 * self.U_inf * (1 + np.cos(theta_analytic)) / np.sin(theta_analytic) * self.alpha
-
-        axes[0, 1].plot(x_analytic, gamma_analytic, 'r-', label='Analytical')
-        axes[0, 1].plot(self.vortex_positions, self.circulations, 'bo-', label='Numerical')
-        axes[0, 1].set_xlabel('x/c')
-        axes[0, 1].set_ylabel('γ(θ)')
-        axes[0, 1].set_title('Numerical vs Analytical')
-        axes[0, 1].legend()
-        axes[0, 1].grid(True)
-
-        axes[1, 0].plot(self.control_points, self.z_control, 'ro', label='Control points')
-        axes[1, 0].plot(self.vortex_positions,
-                        self.camber_func(self.vortex_positions) if self.camber_func else np.zeros_like(
-                            self.vortex_positions),
-                        'b^', label='Vortices')
-        axes[1, 0].set_xlabel('x/c')
-        axes[1, 0].set_ylabel('z/c')
-        axes[1, 0].set_title('Airfoil Geometry')
-        axes[1, 0].legend()
-        axes[1, 0].grid(True)
-        axes[1, 0].axis('equal')
-
-        im = axes[1, 1].imshow(self.A, cmap='coolwarm', aspect='auto')
-        axes[1, 1].set_title('Influence Matrix')
-        axes[1, 1].set_xlabel('Vortex Index')
-        axes[1, 1].set_ylabel('Control Point Index')
-        plt.colorbar(im, ax=axes[1, 1])
-
-        plt.tight_layout()
-        plt.show()
