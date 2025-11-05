@@ -45,7 +45,7 @@ def airfoil_data(airfoil, type="CL", alpha_range=(-5, 15, 5)):
                 alpha_degrees=alpha,
                 n_panels=airfoil.n_panels,
                 camber_func=airfoil.camber_func,
-                debug=False
+                debug=airfoil.debug
             )
             cl, _ = dvm.calculate_aerodynamics()
             cl_dvm.append(cl)
@@ -73,7 +73,7 @@ def airfoil_data(airfoil, type="CL", alpha_range=(-5, 15, 5)):
                 alpha_degrees=alpha,
                 n_panels=airfoil.n_panels,
                 camber_func=airfoil.camber_func,
-                debug=False
+                debug=airfoil.debug
             )
             _, cm_le = dvm.calculate_aerodynamics()
             cm_le_dvm.append(cm_le)
@@ -94,14 +94,41 @@ def airfoil_data(airfoil, type="CL", alpha_range=(-5, 15, 5)):
             title="Cm_LE(alpha)"
         )
 
+def airfoil_grid_convergence(airfoil):
+    panel_counts = [10, 20, 40, 80, 160, 320]
+    cl_dvm = []
+
+    for panels in panel_counts:
+        dvm = DiscreteVortexMethod(
+            alpha_degrees=airfoil.alpha,
+            n_panels=panels,
+            camber_func=airfoil.camber_func,
+            debug=airfoil.debug
+        )
+        cl, _ = dvm.calculate_aerodynamics()
+        cl_dvm.append(cl)
+
+    tat = ThinAirfoilTheory(camber_func=airfoil.camber_func)
+    cl_tat = np.full(np.size(panel_counts), tat.calculate_lift(airfoil.alpha))
+
+    plot_data(
+        data_list=[(panel_counts, cl_dvm), (panel_counts, cl_tat)],
+        colors=['red', 'black'],
+        labels=['dvm', 'tat'],
+        x_label="number of panels",
+        y_label="Cl",
+        title="Grid covergence"
+    )
+
 
 if __name__ == "__main__":
     airfoil_test = DiscreteVortexMethod(
         alpha_degrees=0,
         U_inf=10,
         n_panels=200,
-        camber_func=naca_4_digit_camber(code="4415"),
-        debug=False)
+        camber_func=naca_4_digit_camber(code="8315"),
+        debug=True)
 
-    airfoil_data(airfoil=airfoil_test, type="CM_LE", alpha_range=(0, 10, 5))
-    # airfoil_flow(airfoil=airfoil_test)
+    #airfoil_data(airfoil=airfoil_test, type="CM_LE", alpha_range=(0, 10, 5))
+    #airfoil_flow(airfoil=airfoil_test)
+    airfoil_grid_convergence(airfoil=airfoil_test)
