@@ -18,6 +18,7 @@ def airfoil_coordinates(airfoil, n_points=200):
 
 
 def airfoil_flow(airfoil):
+    airfoil.calculate_aerodynamics()
     flow_model = FlowModel()
     flow_model.add_component(UniformFlow(strength=airfoil.U_inf, alpha=airfoil.alpha))
 
@@ -129,6 +130,6 @@ if __name__ == "__main__":
         camber_func=naca_4_digit_camber(code="8315"),
         debug=True)
 
-    #airfoil_data(airfoil=airfoil_test, type="CM_LE", alpha_range=(0, 10, 5))
+    #airfoil_data(airfoil=airfoil_test, type="CL", alpha_range=(0, 10, 5))
     #airfoil_flow(airfoil=airfoil_test)
     airfoil_grid_convergence(airfoil=airfoil_test)

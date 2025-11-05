@@ -15,11 +15,7 @@ class DiscreteVortexMethod(AirfoilAnalysis):
         self.debug = debug
 
         self.validate_parameters(alpha_degrees, n_panels)
-        self.setup_geometry()
-        self.setup_vortices()
-        self.calculate_influence_matrix()
-        self.calculate_rhs()
-        self.solve_circulation()
+
 
     def compute_gradient(self, y, x):
         n = len(y)
@@ -49,6 +45,7 @@ class DiscreteVortexMethod(AirfoilAnalysis):
             self.dz_dx = np.zeros_like(self.control_points)
 
         if self.debug:
+            print("(...) Calculations started for alpha: ", np.degrees(self.alpha))
             print("✓ Geometry setup completed")
 
     def setup_vortices(self):
@@ -113,6 +110,12 @@ class DiscreteVortexMethod(AirfoilAnalysis):
             print("✓ Circulation is calculated.")
 
     def calculate_aerodynamics(self):
+        self.setup_geometry()
+        self.setup_vortices()
+        self.calculate_influence_matrix()
+        self.calculate_rhs()
+        self.solve_circulation()
+
         total_circulation = np.sum(self.circulations)
         Cl = -2.0 * total_circulation / self.U_inf
         Cm_LE = 2.0 * (np.sum(self.vortex_positions * self.circulations)) / self.U_inf

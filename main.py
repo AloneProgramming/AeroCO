@@ -6,7 +6,7 @@ if __name__ == "__main__":
         U_inf=10,
         n_panels=200,
         camber_func=naca_4_digit_camber(code="8315"),
-        debug=False)
+        debug=True)
 
     airfoil_data(airfoil=airfoil_test, type="CL", alpha_range=(-5, 15, 5))
     airfoil_data(airfoil=airfoil_test, type="CM_LE", alpha_range=(-5, 15, 5))
