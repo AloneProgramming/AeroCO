@@ -49,6 +49,13 @@ class ThinAirfoilTheory(AirfoilAnalysis):
         else:
             return 2 * np.pi * np.radians(alpha_degrees)
 
+    def calculate_leading_edge_moment(self, alpha_degrees):
+        if self.camber_func:
+            results = self.calculate_coefficients(alpha_degrees, self._dz_dx_from_camber)
+            return results['Cm_LE']
+        else:
+            return -0.5 * np.pi * np.radians(alpha_degrees)
+
     def _dz_dx_from_camber(self, x):
         if not self.camber_func:
             return np.zeros_like(x)

@@ -115,11 +115,13 @@ class DiscreteVortexMethod(AirfoilAnalysis):
     def calculate_aerodynamics(self):
         total_circulation = np.sum(self.circulations)
         Cl = -2.0 * total_circulation / self.U_inf
+        Cm_LE = 2.0 * (np.sum(self.vortex_positions * self.circulations)) / self.U_inf
 
         self.results = {
             'Cl': Cl,
+            'CM_LE': Cm_LE,
             'circulation': total_circulation,
             'vortex_distribution': self.circulations
         }
 
-        return Cl, 0.0
+        return Cl, Cm_LE

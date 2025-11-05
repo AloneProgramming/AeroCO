@@ -34,40 +34,74 @@ def airfoil_flow(airfoil):
     plot_combined_flow(flow_model, xlim=(-0.5, 1.5), ylim=(-0.8, 0.8),
                        resolution=100, U_inf=airfoil.U_inf, airfoil_coords=airfoil_coords)
 
+
 def airfoil_data(airfoil, type="CL", alpha_range=(-5, 15, 5)):
     alpha_values = np.arange(alpha_range[0], alpha_range[1] + 1, alpha_range[2])
 
-    cl_dvm = []
-    for alpha in alpha_values:
-        dvm = DiscreteVortexMethod(
-            alpha_degrees=alpha,
-            n_panels=airfoil.n_panels,
-            camber_func=airfoil.camber_func,
-            debug=False
+    if type == "CL":
+        cl_dvm = []
+        for alpha in alpha_values:
+            dvm = DiscreteVortexMethod(
+                alpha_degrees=alpha,
+                n_panels=airfoil.n_panels,
+                camber_func=airfoil.camber_func,
+                debug=False
+            )
+            cl, _ = dvm.calculate_aerodynamics()
+            cl_dvm.append(cl)
+
+        if airfoil.camber_func:
+            tat = ThinAirfoilTheory(camber_func=airfoil.camber_func)
+            cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
+        else:
+            tat = ThinAirfoilTheory()
+            cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
+
+        plot_data(
+            data_list=[(alpha_values, cl_dvm), (alpha_values, cl_tat)],
+            colors=['red', 'black'],
+            labels=['dvm', 'tat'],
+            x_label="alpha",
+            y_label="Cl",
+            title="Cl(alpha)"
         )
-        cl, _ = dvm.calculate_aerodynamics()
-        cl_dvm.append(cl)
 
-    if airfoil.camber_func:
-        tat = ThinAirfoilTheory(camber_func=airfoil.camber_func)
-        cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
-    else:
-        tat = ThinAirfoilTheory()
-        cl_tat = [tat.calculate_lift(alpha) for alpha in alpha_values]
+    if type == "CM_LE":
+        cm_le_dvm = []
+        for alpha in alpha_values:
+            dvm = DiscreteVortexMethod(
+                alpha_degrees=alpha,
+                n_panels=airfoil.n_panels,
+                camber_func=airfoil.camber_func,
+                debug=False
+            )
+            _, cm_le = dvm.calculate_aerodynamics()
+            cm_le_dvm.append(cm_le)
 
-    plot_data(
-        data_list=[(alpha_values, cl_dvm), (alpha_values, cl_tat)],
-        colors=['red', 'black'],
-        labels=['dvm', 'tat']
-    )
+        if airfoil.camber_func:
+            tat = ThinAirfoilTheory(camber_func=airfoil.camber_func)
+            cm_le_tat = [tat.calculate_leading_edge_moment(alpha) for alpha in alpha_values]
+        else:
+            tat = ThinAirfoilTheory()
+            cm_le_tat = [tat.calculate_leading_edge_moment(alpha) for alpha in alpha_values]
+
+        plot_data(
+            data_list=[(alpha_values, cm_le_dvm), (alpha_values, cm_le_tat)],
+            colors=['red', 'black'],
+            labels=['dvm', 'tat'],
+            x_label="alpha",
+            y_label="Cm_LE",
+            title="Cm_LE(alpha)"
+        )
+
 
 if __name__ == "__main__":
     airfoil_test = DiscreteVortexMethod(
-        alpha_degrees=10,
+        alpha_degrees=0,
         U_inf=10,
         n_panels=200,
-        camber_func=naca_4_digit_camber(code="8315"),
+        camber_func=naca_4_digit_camber(code="4415"),
         debug=False)
 
-    airfoil_data(airfoil=airfoil_test)
-    airfoil_flow(airfoil=airfoil_test)
+    airfoil_data(airfoil=airfoil_test, type="CM_LE", alpha_range=(0, 10, 5))
+    # airfoil_flow(airfoil=airfoil_test)

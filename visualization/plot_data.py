@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 
 
-def plot_data(data_list, colors=None, labels=None):
+def plot_data(data_list, colors=None, labels=None, x_label="x", y_label="y", title="Title"):
     plt.figure(figsize=(10, 6))
 
     if colors is None:
@@ -13,9 +13,9 @@ def plot_data(data_list, colors=None, labels=None):
         plt.plot(x, y, color=color, label=label)
 
     plt.grid(True)
-    plt.xlabel("Cl")
-    plt.ylabel("alpha")
-    plt.title("Cl(alpha)", fontweight='bold')
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.title(title, fontweight='bold')
 
     if any(labels):
         plt.legend()
