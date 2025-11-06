@@ -9,6 +9,7 @@ class DiscreteVortexMethod(AirfoilAnalysis):
         super().__init__("Discrete Vortex Method")
         self.chord = chord
         self.alpha = np.radians(alpha_degrees)
+        self.alpha_deg = alpha_degrees
         self.n_panels = n_panels
         self.U_inf = U_inf
         self.camber_func = camber_func

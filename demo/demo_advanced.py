@@ -109,7 +109,7 @@ def airfoil_grid_convergence(airfoil):
 
     for panels in panel_counts:
         dvm = DiscreteVortexMethod(
-            alpha_degrees=airfoil.alpha,
+            alpha_degrees=airfoil.alpha_deg,
             n_panels=panels,
             camber_func=airfoil.camber_func,
             debug=airfoil.debug
@@ -118,7 +118,7 @@ def airfoil_grid_convergence(airfoil):
         cl_dvm.append(cl)
 
     tat = ThinAirfoilTheory(camber_func=airfoil.camber_func)
-    cl_tat = np.full(np.size(panel_counts), tat.calculate_lift(airfoil.alpha))
+    cl_tat = np.full(np.size(panel_counts), tat.calculate_lift(airfoil.alpha_deg))
 
     plot_data(
         data_list=[(panel_counts, cl_dvm), (panel_counts, cl_tat)],
@@ -132,11 +132,11 @@ def airfoil_grid_convergence(airfoil):
 
 if __name__ == "__main__":
     airfoil_test = DiscreteVortexMethod(
-        alpha_degrees=0,
+        alpha_degrees=5,
         n_panels=200,
-        camber_func=naca_4_digit_camber(code="8312"),
+        camber_func=naca_4_digit_camber(code="9412"),
         debug=True)
 
     airfoil_data(airfoil=airfoil_test, types=("CL", "CM_LE", "CM_AC",), alpha_range=(0, 15, 3))
     airfoil_flow(airfoil=airfoil_test)
-    # airfoil_grid_convergence(airfoil=airfoil_test)
+    airfoil_grid_convergence(airfoil=airfoil_test)
