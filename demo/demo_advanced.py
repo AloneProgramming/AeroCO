@@ -8,8 +8,8 @@ from visualization.plot_flow import *
 from visualization.plot_data import *
 
 
-def airfoil_coordinates(airfoil, n_points=200):
-    x_points = np.linspace(0, 1, n_points)
+def airfoil_coordinates(airfoil):
+    x_points = np.linspace(0, 1, airfoil.n_panels + 1)
     if airfoil.camber_func is not None:
         y_points = airfoil.camber_func(x_points)
     else:
@@ -32,8 +32,8 @@ def airfoil_flow(airfoil):
 
     airfoil_coords = airfoil_coordinates(airfoil)
 
-    plot_combined_flow(flow_model, xlim=(-0.5, 1.5), ylim=(-0.8, 0.8),
-                       resolution=100, U_inf=airfoil.U_inf, airfoil_coords=airfoil_coords)
+    plot_velocity_field(flow_model, xlim=(-0.5, 1.5), ylim=(-0.8, 0.8),
+                       resolution=100, airfoil_coords=airfoil_coords)
 
 
 def airfoil_data(airfoil, types=("CL", "CM_LE", "CM_AC"), alpha_range=(-5, 15, 5)):
@@ -134,9 +134,9 @@ if __name__ == "__main__":
     airfoil_test = DiscreteVortexMethod(
         alpha_degrees=0,
         n_panels=200,
-        camber_func=naca_4_digit_camber(code="2212"),
+        camber_func=naca_4_digit_camber(code="8312"),
         debug=True)
 
-    results, _ = airfoil_data(airfoil=airfoil_test, types=("CL", "CM_LE", "CM_AC",), alpha_range=(0, 15, 3))
+    airfoil_data(airfoil=airfoil_test, types=("CL", "CM_LE", "CM_AC",), alpha_range=(0, 15, 3))
     airfoil_flow(airfoil=airfoil_test)
-    airfoil_grid_convergence(airfoil=airfoil_test)
+    # airfoil_grid_convergence(airfoil=airfoil_test)
