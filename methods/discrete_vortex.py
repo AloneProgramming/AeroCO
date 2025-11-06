@@ -117,14 +117,16 @@ class DiscreteVortexMethod(AirfoilAnalysis):
         self.solve_circulation()
 
         total_circulation = np.sum(self.circulations)
-        Cl = -2.0 * total_circulation / self.U_inf
-        Cm_LE = 2.0 * (np.sum(self.vortex_positions * self.circulations)) / self.U_inf
+        Cl = round(-2.0 * total_circulation / self.U_inf, 6)
+        Cm_LE = round(2.0 * (np.sum(self.vortex_positions * self.circulations)) / self.U_inf, 6)
+        Cm_AC = round(Cm_LE + Cl * 0.25, 6)
 
         self.results = {
             'Cl': Cl,
             'CM_LE': Cm_LE,
+            #'CM_AC': Cm_AC,
             'circulation': total_circulation,
             'vortex_distribution': self.circulations
         }
 
-        return Cl, Cm_LE
+        return Cl, Cm_LE, Cm_AC
