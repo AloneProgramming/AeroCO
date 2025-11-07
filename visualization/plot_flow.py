@@ -131,3 +131,27 @@ def plot_streamlines_advanced(flow_model, xlim=(-5, 5), ylim=(-5, 5), resolution
     plt.grid(True, alpha=0.2)
     plt.tight_layout()
     plt.show()
+
+
+def plot_vorticity_field(flow_model, xlim=(-5, 5), ylim=(-5, 5), resolution=50):
+    x = np.linspace(xlim[0], xlim[1], resolution)
+    y = np.linspace(ylim[0], ylim[1], resolution)
+    X, Y = np.meshgrid(x, y)
+
+    plt.figure(figsize=(12, 10))
+
+    vorticity = flow_model.vorticity_field(X, Y)
+
+
+    contourf = plt.contourf(X, Y, vorticity, levels=30, alpha=0.8, cmap='RdBu_r')
+    plt.colorbar(contourf, label='Vorticity [1/s]', shrink=0.8)
+
+    contour = plt.contour(X, Y, vorticity, levels=10, colors='black', linewidths=0.5, alpha=0.5)
+
+    plt.title('Vorticity Field', fontsize=14, fontweight='bold')
+    plt.xlabel('X [m]')
+    plt.ylabel('Y [m]')
+    plt.gca().set_aspect('equal')
+    plt.grid(True, alpha=0.2)
+    plt.tight_layout()
+    plt.show()

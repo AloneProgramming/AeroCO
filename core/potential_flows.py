@@ -14,6 +14,9 @@ class FlowComponent:
     def stream_function(self, X, Y):
         return np.zeros_like(X)
 
+    def vorticity_field(self, X, Y):
+        return np.zeros_like(X), np.zeros_like(Y)
+
     def _shifted_coordinates(self, X, Y):
         return X - self.dx, Y - self.dy
 
@@ -121,6 +124,16 @@ class FlowModel:
             psi_total += comp.stream_function(X, Y)
 
         return psi_total
+
+    def vorticity_field(self, X, Y):
+        omega_total = np.zeros_like(X)
+
+        for comp in self.components:
+            if hasattr(comp, 'vorticity_field'):
+                omega_comp = comp.vorticity_field(X, Y)
+                omega_total += omega_comp
+
+        return omega_total
 
     def pressure_coefficient(self, X, Y, U_inf=1.0):
         u, v = self.velocity_field(X, Y)

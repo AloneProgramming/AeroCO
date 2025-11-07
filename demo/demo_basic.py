@@ -48,8 +48,9 @@ def gaussian_vortex_test():
     print("Gaussian Vortex Demo")
 
     flow = FlowModel()
-    flow.add_component(GaussianVortex(strength=2.0, sigma=0.5, dx=-3))
+    flow.add_component(GaussianVortex(strength=2.0, sigma=0.5))
     plot_velocity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
+    plot_vorticity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
 
 if __name__ == "__main__":
