@@ -125,7 +125,7 @@ class DiscreteVortexMethod(AirfoilAnalysis):
         self.results = {
             'Cl': Cl,
             'CM_LE': Cm_LE,
-            #'CM_AC': Cm_AC,
+            'CM_AC': Cm_AC,
             'circulation': total_circulation,
             'vortex_distribution': self.circulations
         }
