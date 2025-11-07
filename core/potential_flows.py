@@ -75,6 +75,27 @@ class Vortex(FlowComponent):
         return (-self.strength / (2 * np.pi)) * np.log(np.sqrt(r_sq))
 
 
+class GaussianVortex(Vortex):
+    def __init__(self, strength, sigma=1.0, dx=0, dy=0):
+        super().__init__(strength, dx, dy)
+        self.sigma = sigma
+
+    def velocity_field(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = np.maximum(X_shifted ** 2 + Y_shifted ** 2, 1e-10)
+        r = np.sqrt(r_sq)
+        velocity_magnitude = (self.strength / (2 * np.pi * r)) * (1 - np.exp(-r_sq / self.sigma ** 2))
+        u = -velocity_magnitude * (Y_shifted / r)
+        v = velocity_magnitude * (X_shifted / r)
+        return u, v
+
+    def vorticity_field(self, X, Y):
+        X_shifted, Y_shifted = self._shifted_coordinates(X, Y)
+        r_sq = X_shifted ** 2 + Y_shifted ** 2
+        vorticity = (self.strength / (np.pi * self.sigma ** 2)) * np.exp(-r_sq / self.sigma ** 2)
+        return vorticity
+
+
 class FlowModel:
     def __init__(self, components=None):
         self.components = components if components is not None else []

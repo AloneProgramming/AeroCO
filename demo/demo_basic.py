@@ -1,9 +1,8 @@
 import numpy as np
 import matplotlib.pyplot as plt
-from core.potential_flows import FlowModel, UniformFlow, Vortex, Doublet
+from core.potential_flows import *
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
-from methods.discrete_vortex import DiscreteVortexMethod
 from visualization.plot_flow import *
 
 def demo_thin_airfoil():
@@ -27,7 +26,7 @@ def demo_thin_airfoil():
 
 
 def demo_potential_flows():
-    print("\nPotential Flows Demo")
+    print("Potential Flows Demo")
 
     flow = FlowModel()
     flow.add_component(Vortex(strength=1.0, dx=0, dy=0))
@@ -45,7 +44,15 @@ def demo_potential_flows():
     flow_cylinder.add_component(Doublet(strength=strength_doublet, dx=0, dy=0))
     plot_velocity_field(flow_cylinder, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
+def gaussian_vortex_test():
+    print("Gaussian Vortex Demo")
+
+    flow = FlowModel()
+    flow.add_component(GaussianVortex(strength=2.0, sigma=0.5, dx=-3))
+    plot_velocity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
+
 
 if __name__ == "__main__":
-    #demo_thin_airfoil()
-    demo_potential_flows()
+    # demo_thin_airfoil()
+    # demo_potential_flows()
+    gaussian_vortex_test()
