@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation
 from core.potential_flows import *
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
@@ -58,48 +59,58 @@ def gaussian_vortex_test():
     plot_vorticity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
 
-def demo_diffusion():
+def demo_diffusion_animated():
     test = DiffusionVortex1D(viscosity=1.0, sigma=0.5)
-    test.add_vortex(-0.5, 1.0)
-    test.add_vortex(0.5, 1.0)
+    test.add_vortex(-0.25, 1.0)
+    test.add_vortex(-0.125, 1.0)
+    test.add_vortex(0, 1.0)
+    test.add_vortex(0.125, 1.0)
+    test.add_vortex(0.25, 1.0)
 
     x_plot = np.linspace(-2, 2, 100)
+    steps = 100
+    dt = 0.1
 
-    print("Initial vortex positions:", [v[0] for v in test.vortices])
+    fig, ax = plt.subplots(figsize=(10, 4))
+    line_omega, = ax.plot([], [], 'b-', label='ω', linewidth=2)
+    line_grad, = ax.plot([], [], 'r--', label='dω/dx', alpha=0.7)
+    scatter_vortices = ax.scatter([], [], color='black', s=80, zorder=5, label='Vortices')
 
-    vortex_positions = np.array([v[0] for v in test.vortices])
-    omega, d_omega_dx = test.calculate_vorticity_and_gradient(vortex_positions)
+    ax.set_xlim(-2, 2)
+    ax.set_ylim(-10, 10)
+    ax.grid(True)
+    ax.legend()
+    ax.set_xlabel('x')
+    ax.set_ylabel('Vorticity ω')
 
-    print("Vorticity at vortex positions:", omega)
-    print("Vorticity gradient at vortex positions:", d_omega_dx)
-    print("Diffusion velocity:", test.calculate_diffusion_velocity())
+    def init():
+        line_omega.set_data([], [])
+        line_grad.set_data([], [])
+        scatter_vortices.set_offsets(np.empty((0, 2)))
+        return line_omega, line_grad, scatter_vortices
 
-    for step in range(10):
-        test.step(dt=0.1)
-
+    def update(frame):
+        test.step(dt=dt)
         omega, grad = test.calculate_vorticity_and_gradient(x_plot)
-        vortex_x = [v[0] for v in test.vortices]
-
-        print(f"Step {step}: positions = {vortex_x}")
-        print(f"Step {step}: diffusion velocity = {test.calculate_diffusion_velocity()}")
-
-        plt.figure(figsize=(10, 4))
-        plt.plot(x_plot, omega, 'b-', label=f'ω (step {step})', linewidth=2)
-        plt.plot(x_plot, grad, 'r--', label='dω/dx', alpha=0.7)
-
+        vortex_x = np.array([v[0] for v in test.vortices])
         vortex_omega = test.calculate_vorticity_and_gradient(vortex_x)[0]
-        plt.scatter(vortex_x, vortex_omega, color='black', s=80, zorder=5, label='Vortices')
 
-        plt.legend()
-        plt.title(f'Vortex diffusion - step {step}')
-        plt.grid(True)
-        plt.xlabel('x')
-        plt.ylabel('Vorticity ω')
-        plt.show()
+        line_omega.set_data(x_plot, omega)
+        line_grad.set_data(x_plot, grad)
+        scatter_vortices.set_offsets(np.c_[vortex_x, vortex_omega])
+
+        ax.set_title(f'Vortex diffusion - step {frame + 1}')
+        return line_omega, line_grad, scatter_vortices
+
+    ani = FuncAnimation(fig, update, frames=steps,
+                        init_func=init, blit=True, interval=200, repeat=True)
+
+    plt.show()
+    return ani
 
 
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
     # gaussian_vortex_test()
-    demo_diffusion()
+    demo_diffusion_animated()
