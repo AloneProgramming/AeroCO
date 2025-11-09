@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 from core.potential_flows import *
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
+from methods.diffusion_vortex import DiffusionVortex1D
 from visualization.plot_flow import *
+from visualization.plot_data import *
+
 
 def demo_thin_airfoil():
     print("Thin Airfoil Theory Demo")
@@ -14,6 +17,7 @@ def demo_thin_airfoil():
         print(f"AOA: {alpha_deg}° -> Cl = {results['Cl']:.4f}, Cm_AC = {results['Cm_AC']:.4f}")
 
     h = 0.05
+
     def dz_dx_parabolic(x):
         return 4 * h * (1 - 2 * x)
 
@@ -44,6 +48,7 @@ def demo_potential_flows():
     flow_cylinder.add_component(Doublet(strength=strength_doublet, dx=0, dy=0))
     plot_velocity_field(flow_cylinder, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
+
 def gaussian_vortex_test():
     print("Gaussian Vortex Demo")
 
@@ -53,7 +58,48 @@ def gaussian_vortex_test():
     plot_vorticity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
 
+def demo_diffusion():
+    test = DiffusionVortex1D(viscosity=1.0, sigma=0.5)
+    test.add_vortex(-0.5, 1.0)
+    test.add_vortex(0.5, 1.0)
+
+    x_plot = np.linspace(-2, 2, 100)
+
+    print("Initial vortex positions:", [v[0] for v in test.vortices])
+
+    vortex_positions = np.array([v[0] for v in test.vortices])
+    omega, d_omega_dx = test.calculate_vorticity_and_gradient(vortex_positions)
+
+    print("Vorticity at vortex positions:", omega)
+    print("Vorticity gradient at vortex positions:", d_omega_dx)
+    print("Diffusion velocity:", test.calculate_diffusion_velocity())
+
+    for step in range(10):
+        test.step(dt=0.1)
+
+        omega, grad = test.calculate_vorticity_and_gradient(x_plot)
+        vortex_x = [v[0] for v in test.vortices]
+
+        print(f"Step {step}: positions = {vortex_x}")
+        print(f"Step {step}: diffusion velocity = {test.calculate_diffusion_velocity()}")
+
+        plt.figure(figsize=(10, 4))
+        plt.plot(x_plot, omega, 'b-', label=f'ω (step {step})', linewidth=2)
+        plt.plot(x_plot, grad, 'r--', label='dω/dx', alpha=0.7)
+
+        vortex_omega = test.calculate_vorticity_and_gradient(vortex_x)[0]
+        plt.scatter(vortex_x, vortex_omega, color='black', s=80, zorder=5, label='Vortices')
+
+        plt.legend()
+        plt.title(f'Vortex diffusion - step {step}')
+        plt.grid(True)
+        plt.xlabel('x')
+        plt.ylabel('Vorticity ω')
+        plt.show()
+
+
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
-    gaussian_vortex_test()
+    # gaussian_vortex_test()
+    demo_diffusion()
