@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from core.potential_flows import *
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
-from methods.diffusion_vortex import DiffusionVortex1D
+from methods.diffusion_velocity import DiffusionVortex1D
 from visualization.plot_flow import *
 from visualization.plot_data import *
 
