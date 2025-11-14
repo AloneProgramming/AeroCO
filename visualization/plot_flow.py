@@ -41,7 +41,7 @@ def plot_pressure_field(flow_model, xlim=(-5, 5), ylim=(-5, 5), resolution=200, 
     y = np.linspace(ylim[0], ylim[1], resolution)
     X, Y = np.meshgrid(x, y)
 
-    pressure_cmap = plt.cm.seismic
+    pressure_cmap = plt.cm.jet
 
     Cp = flow_model.pressure_coefficient(X, Y, U_inf)
 
@@ -51,9 +51,6 @@ def plot_pressure_field(flow_model, xlim=(-5, 5), ylim=(-5, 5), resolution=200, 
 
     contourf = plt.contourf(X, Y, Cp_clipped, levels=50, cmap=pressure_cmap, alpha=0.9)
     cbar = plt.colorbar(contourf, label='Pressure Coefficient (Cp)', shrink=0.8)
-
-    contour = plt.contour(X, Y, Cp, levels=15, colors='black', linewidths=0.5, alpha=0.5)
-    plt.clabel(contour, inline=True, fontsize=8, fmt='%.1f')
 
     if airfoil_coords is not None:
         plt.plot(airfoil_coords[:, 0], airfoil_coords[:, 1], 'k-', linewidth=2)
@@ -84,7 +81,7 @@ def plot_combined_flow(flow_model, xlim=(-5, 5), ylim=(-5, 5), resolution=100, U
 
     Cp = flow_model.pressure_coefficient(X, Y, U_inf)
     Cp_clipped = np.clip(Cp, -2.0, 1.5)
-    im2 = ax2.contourf(X, Y, Cp_clipped, levels=40, alpha=0.9, cmap='seismic')
+    im2 = ax2.contourf(X, Y, Cp_clipped, levels=40, alpha=0.9, cmap='jet')
     plt.colorbar(im2, ax=ax2, label='Pressure Coefficient (Cp)', shrink=0.8)
 
     for ax in (ax1, ax2):
