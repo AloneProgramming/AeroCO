@@ -1,4 +1,14 @@
 import numpy as np
+from scipy import special
+
+
+def analytical_solution_1d(x, t, h, nu):
+    if t == 0:
+        return np.where(np.abs(x) <= h, 1.0, 0.0)
+    else:
+        term1 = (h - x) / (2 * np.sqrt(nu * t))
+        term2 = (h + x) / (2 * np.sqrt(nu * t))
+        return 0.5 * (special.erf(term1) + special.erf(term2))
 
 
 class DiffusionVortex1D:
@@ -57,3 +67,15 @@ class DiffusionVortex1D:
 
         self.history.append(np.array(self.vortices))
 
+    def create_rectangular_impulse(self, h, n_vortices):
+        self.vortices = []
+        x_positions = np.linspace(-h, h, n_vortices)
+        total_circulation = 2 * h * 1.0
+        gamma_per_vortex = total_circulation / n_vortices
+
+        for x in x_positions:
+            self.add_vortex(x, gamma_per_vortex)
+
+    def get_numerical_solution(self, x_points):
+        omega, _ = self.calculate_vorticity_and_gradient(x_points)
+        return omega

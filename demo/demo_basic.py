@@ -4,7 +4,7 @@ from matplotlib.animation import FuncAnimation
 from core.potential_flows import *
 from core.camber_functions import parabolic_camber, naca_4_digit_camber
 from methods.thin_airfoil import ThinAirfoilTheory
-from methods.diffusion_velocity import DiffusionVortex1D
+from methods.diffusion_velocity import *
 from visualization.plot_flow import *
 from visualization.plot_data import *
 
@@ -109,8 +109,63 @@ def demo_diffusion_animated():
     return ani
 
 
+def validation_1d_diffusion():
+    print("1D rectangular diffusion validation")
+
+    h = 1.0
+    nu = 1.0
+    sigma = 0.4 * h
+    n_vortices = 50
+
+    model = DiffusionVortex1D(viscosity=nu, sigma=sigma)
+    model.create_rectangular_impulse(h, n_vortices)
+
+    dimensionless_times = [0.2, 1.0, 4.0]  # νt/h²
+    dt = 0.04 * h ** 2 / nu
+
+    x_plot = np.linspace(-3 * h, 3 * h, 200)
+
+    for i, dim_time in enumerate(dimensionless_times):
+        t = dim_time * h**2 / nu
+
+        if dim_time > 0:
+            n_steps = int(t / dt)
+            print(f"Evolution to t = {t:.3f}; (νt/h² = {dim_time}); steps: {n_steps}")
+
+            for step in range(n_steps):
+                model.step(dt)
+
+        omega_numerical = model.get_numerical_solution(x_plot)
+        omega_analytical = analytical_solution_1d(x_plot, t, h, nu)
+        plt.figure(figsize=(10, 6))
+
+        plt.plot(x_plot, omega_numerical, 'b-', linewidth=2,
+                 label=f'Numerical (N={n_vortices})')
+        plt.plot(x_plot, omega_analytical, 'r--', linewidth=2,
+                 label='Analytical')
+
+        vortex_x = [v[0] for v in model.vortices]
+        vortex_omega = model.get_numerical_solution(vortex_x)
+        plt.scatter(vortex_x, vortex_omega, color='blue', s=30, alpha=0.6,
+                    label='Vortices')
+
+        plt.xlabel('x/h')
+        plt.ylabel('Vorticity ω')
+        plt.title(f'Rectangular impulse diffusion: νt/h² = {dim_time}')
+        plt.legend()
+        plt.grid(True, alpha=0.3)
+        plt.xlim(-3, 3)
+        plt.ylim(-0.1, 1.1)
+
+        error = np.sqrt(np.mean((omega_numerical - omega_analytical) ** 2))
+        print(f"RMS err at νt/h²={dim_time}: {error:.6f}")
+
+        plt.show()
+
+
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
     # gaussian_vortex_test()
-    demo_diffusion_animated()
+    # demo_diffusion_animated()
+    validation_1d_diffusion()
