@@ -120,13 +120,13 @@ def validation_1d_diffusion():
     model = DiffusionVortex1D(viscosity=nu, sigma=sigma)
     model.create_rectangular_impulse(h, n_vortices)
 
-    dimensionless_times = [0.2, 1.0, 4.0]  # νt/h²
+    dimensionless_times = [0, 0.2, 1.0, 4.0, 20.0]  # νt/h²
     dt = 0.04 * h ** 2 / nu
 
     x_plot = np.linspace(-3 * h, 3 * h, 200)
 
     for i, dim_time in enumerate(dimensionless_times):
-        t = dim_time * h**2 / nu
+        t = dim_time * h ** 2 / nu
 
         if dim_time > 0:
             n_steps = int(t / dt)
@@ -163,9 +163,49 @@ def validation_1d_diffusion():
         plt.show()
 
 
+def verification_1d_diffusion():
+    print("1D rectangular diffusion verification")
+
+    h = 1.0
+    nu = 1.0
+    sigma = 0.4 * h
+    t_final = 1.0
+    dt = 0.01
+
+    n_vortices_list = [10, 20, 40, 80, 160, 320]
+    err = []
+
+    x_plot = np.linspace(-3*h, 3*h, 300)
+
+    for n_vortices in n_vortices_list:
+        model = DiffusionVortex1D(viscosity=nu, sigma=sigma)
+        model.create_rectangular_impulse(h, n_vortices)
+
+        n_steps = int(t_final / dt)
+        for step in range(n_steps):
+            model.step(dt)
+
+        omega_num = model.get_numerical_solution(x_plot)
+        omega_anal = analytical_solution_1d(x_plot, t_final, h, nu)
+
+        error = np.sqrt(np.mean((omega_num - omega_anal) ** 2))
+        err.append(error)
+
+        print(f"N={n_vortices}: err = {error:.6f}")
+
+    plt.figure(figsize=(10, 6))
+    plt.loglog(n_vortices_list, err, 'bo-', linewidth=2, markersize=8)
+    plt.xlabel('Number of vortices')
+    plt.ylabel('RMS err')
+    plt.title('Verification (grid convergence)')
+    plt.grid(True, which="both", alpha=0.3)
+    plt.show()
+
+
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
     # gaussian_vortex_test()
     # demo_diffusion_animated()
     validation_1d_diffusion()
+    verification_1d_diffusion()
