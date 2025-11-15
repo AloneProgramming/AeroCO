@@ -1,0 +1,8 @@
+/shelf/
+/workspace.xml
+/.idea
+/core/__pycache__
+/demo/__pycache__
+/methods/__pycache__
+/visualization/__pycache__
+.gitignore
