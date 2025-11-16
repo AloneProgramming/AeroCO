@@ -201,11 +201,52 @@ def verification_1d_diffusion():
     plt.grid(True, which="both", alpha=0.3)
     plt.show()
 
+def demo_2d_diffusion():
+    print("2D diffusion demo")
+
+    model = DiffusionVortex2D(viscosity=0.5, sigma=0.3)
+
+    n_vortices = 20
+
+    for i in range(n_vortices):
+        r = 0.5 * np.sqrt(np.random.rand())
+        theta = 2 * np.pi * np.random.rand()
+        x = r * np.cos(theta)
+        y = r * np.sin(theta)
+        model.add_vortex(x, y, 1.0/n_vortices)
+
+    x = np.linspace(-2, 2, 50)
+    y = np.linspace(-2, 2, 50)
+    X, Y = np.meshgrid(x, y)
+
+    for step in range(10):
+        model.step(dt=0.1)
+
+        omega = model.vorticity_field(X, Y)
+
+        plt.figure(figsize=(10, 8))
+        plt.contourf(X, Y, omega, levels=20, cmap='viridis')
+        plt.colorbar(label='Vorticity ω')
+
+        vortex_x = [v[0] for v in model.vortices]
+        vortex_y = [v[1] for v in model.vortices]
+        plt.scatter(vortex_x, vortex_y, color='white', s=30, alpha=0.7, label='Vortices')
+
+        plt.title(f'2D Diffusion - Step {step}')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.axis('equal')
+        plt.legend()
+        plt.show()
+
+        u_d, v_d = model.calculate_diffusion_velocity()
+        print(f"Step {step}: Max diffusion velocity = {np.max(np.sqrt(u_d ** 2 + v_d ** 2)):.6f}")
 
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
     # gaussian_vortex_test()
     # demo_diffusion_animated()
-    validation_1d_diffusion()
-    verification_1d_diffusion()
+    # validation_1d_diffusion()
+    # verification_1d_diffusion()
+    demo_2d_diffusion()

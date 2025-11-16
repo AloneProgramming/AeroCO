@@ -79,3 +79,84 @@ class DiffusionVortex1D:
     def get_numerical_solution(self, x_points):
         omega, _ = self.calculate_vorticity_and_gradient(x_points)
         return omega
+
+
+class DiffusionVortex2D:
+    def __init__(self, viscosity=1.0, sigma=1.0):
+        self.nu = viscosity
+        self.sigma = sigma
+        self.vortices = []
+        self.history = []
+
+    def add_vortex(self, x, y, gamma):
+        self.vortices.append([x, y, gamma])
+
+    def vorticity_field(self, X, Y):
+        omega = np.zeros_like(X)
+
+        for x_v, y_v, gamma_v in self.vortices:
+            r_sq = (X - x_v) ** 2 + (Y - y_v) ** 2
+
+            kernel = (gamma_v / (np.pi * self.sigma ** 2)) * np.exp(-r_sq / self.sigma ** 2)
+            omega += kernel
+
+        return omega
+
+    def calculate_vorticity_and_gradient(self, x_points, y_points=None):
+        if y_points is None:
+            x_points = np.array([v[0] for v in self.vortices])
+            y_points = np.array([v[1] for v in self.vortices])
+
+        x_points = np.array(x_points)
+        y_points = np.array(y_points)
+
+        omega = np.zeros_like(x_points)
+        d_omega_dx = np.zeros_like(x_points)
+        d_omega_dy = np.zeros_like(x_points)
+
+        for x_v, y_v, gamma_v in self.vortices:
+            dx = x_points - x_v
+            dy = y_points - y_v
+            r_sq = dx ** 2 + dy ** 2
+
+            kernel = (gamma_v / (np.pi * self.sigma ** 2)) * np.exp(-r_sq / self.sigma ** 2)
+            omega += kernel
+
+            kernel_derivative_x = kernel * (-2 * dx / self.sigma ** 2)
+            kernel_derivative_y = kernel * (-2 * dy / self.sigma ** 2)
+
+            d_omega_dx += kernel_derivative_x
+            d_omega_dy += kernel_derivative_y
+
+        return omega, d_omega_dx, d_omega_dy
+
+    def calculate_diffusion_velocity(self):
+        if not self.vortices:
+            return np.array([]), np.array([])
+
+        omega, d_omega_dx, d_omega_dy = self.calculate_vorticity_and_gradient(None, None)
+
+        omega_safe = np.where(np.abs(omega) > 1e-12, omega, 1e-12 * np.sign(omega + 1e-20))
+
+        u_d = -self.nu / omega_safe * d_omega_dx
+        v_d = -self.nu / omega_safe * d_omega_dy
+
+        return u_d, v_d
+
+    def step(self, dt, u_conv=None, v_conv=None):
+        if not self.vortices:
+            return
+
+        u_d, v_d = self.calculate_diffusion_velocity()
+
+        if u_conv is None:
+            u_conv = np.zeros_like(u_d)
+        if v_conv is None:
+            v_conv = np.zeros_like(v_d)
+
+        for i, (x, y, gamma) in enumerate(self.vortices):
+            new_x = x + (u_conv[i] + u_d[i]) * dt
+            new_y = y + (v_conv[i] + v_d[i]) * dt
+            self.vortices[i] = [new_x, new_y, gamma]
+
+        self.history.append(np.array(self.vortices))
