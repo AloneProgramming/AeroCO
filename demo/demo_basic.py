@@ -59,7 +59,7 @@ def gaussian_vortex_test():
     plot_vorticity_field(flow, xlim=(-5, 5), ylim=(-5, 5), resolution=40)
 
 
-def demo_diffusion_animated():
+def demo_1D_diffusion_animated():
     test = DiffusionVortex1D(viscosity=1.0, sigma=0.5)
     test.add_vortex(-0.25, 1.0)
     test.add_vortex(-0.125, 1.0)
@@ -109,7 +109,7 @@ def demo_diffusion_animated():
     return ani
 
 
-def validation_1d_diffusion():
+def validation_1D_diffusion():
     print("1D rectangular diffusion validation")
 
     h = 1.0
@@ -163,7 +163,7 @@ def validation_1d_diffusion():
         plt.show()
 
 
-def verification_1d_diffusion():
+def verification_1D_diffusion():
     print("1D rectangular diffusion verification")
 
     h = 1.0
@@ -201,7 +201,8 @@ def verification_1d_diffusion():
     plt.grid(True, which="both", alpha=0.3)
     plt.show()
 
-def demo_2d_diffusion():
+
+def demo_2D_diffusion():
     print("2D diffusion demo")
 
     model = DiffusionVortex2D(viscosity=0.5, sigma=0.3)
@@ -246,7 +247,7 @@ if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
     # gaussian_vortex_test()
-    # demo_diffusion_animated()
+    # demo_1D_diffusion_animated()
     # validation_1d_diffusion()
     # verification_1d_diffusion()
-    demo_2d_diffusion()
+    demo_2D_diffusion()
