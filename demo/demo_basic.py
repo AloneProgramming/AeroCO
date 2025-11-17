@@ -243,6 +243,59 @@ def demo_2D_diffusion():
         u_d, v_d = model.calculate_diffusion_velocity()
         print(f"Step {step}: Max diffusion velocity = {np.max(np.sqrt(u_d ** 2 + v_d ** 2)):.6f}")
 
+
+def demo_convection_diffusion():
+    print("Convection + diffusion demo")
+
+    model = DiffusionVelocityMethod(viscosity=0.1, sigma=0.2, U_inf=1.0, alpha=0.0)
+
+    n_vortices = 30
+    for i in range(n_vortices):
+        r = 0.3 * np.sqrt(np.random.rand())
+        theta = 2 * np.pi * np.random.rand()
+        x = -1.0 + r * np.cos(theta)
+        y = r * np.sin(theta)
+        model.add_vortex(x, y, 1.0 / n_vortices)
+
+    x = np.linspace(-3, 3, 80)
+    y = np.linspace(-2, 2, 60)
+    X, Y = np.meshgrid(x, y)
+
+    for step in range(5):
+        model.step(dt=0.1)
+
+        omega = model.vorticity_field(X, Y)
+
+        plt.figure(figsize=(14, 8))
+
+        contour = plt.contourf(X, Y, omega, levels=25, cmap='viridis', alpha=0.8)
+        plt.colorbar(contour, label='Vorticity ω')
+
+        u, v = model.total_velocity_field(X, Y)
+        speed = np.sqrt(u ** 2 + v ** 2)
+
+        vortex_x = [v[0] for v in model.vortices]
+        vortex_y = [v[1] for v in model.vortices]
+        plt.scatter(vortex_x, vortex_y, color='red', s=40, alpha=0.7, label='Vortices')
+
+        plt.title(f'Convection + diffusion. Step: {step}\n'
+                  f'U_inf = {model.U_inf}, α = {np.degrees(model.alpha):.1f}°')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.axis('equal')
+        plt.grid(True, alpha=0.3)
+        plt.legend()
+        plt.show()
+
+        u_d, v_d = model.calculate_diffusion_velocity()
+        max_diff_speed = np.max(np.sqrt(u_d ** 2 + v_d ** 2))
+
+        vortex_positions = np.array([[v[0], v[1]] for v in model.vortices])
+        center_x, center_y = np.mean(vortex_positions, axis=0)
+
+        print(f"Step {step}: center = ({center_x:.3f}, {center_y:.3f}), "
+              f"U_diff_max = {max_diff_speed:.4f}, U_conv = {model.U_inf}")
+
 if __name__ == "__main__":
     # demo_thin_airfoil()
     # demo_potential_flows()
@@ -250,4 +303,5 @@ if __name__ == "__main__":
     # demo_1D_diffusion_animated()
     # validation_1d_diffusion()
     # verification_1d_diffusion()
-    demo_2D_diffusion()
+    # demo_2D_diffusion()
+    demo_convection_diffusion()

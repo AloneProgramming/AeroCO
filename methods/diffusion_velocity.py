@@ -160,3 +160,65 @@ class DiffusionVortex2D:
             self.vortices[i] = [new_x, new_y, gamma]
 
         self.history.append(np.array(self.vortices))
+
+
+class DiffusionVelocityMethod(DiffusionVortex2D):
+    def __init__(self, viscosity=1.0, sigma=1.0, U_inf=1.0, alpha=0.0):
+        super().__init__(viscosity, sigma)
+        self.U_inf = U_inf
+        self.alpha = alpha
+
+    def set_freestream(self, U_inf, alpha_degrees=0.0):
+        self.U_inf = U_inf
+        self.alpha = np.radians(alpha_degrees)
+
+    def _freestream_velocity(self, x, y):
+        u = np.ones_like(x) * self.U_inf * np.cos(self.alpha)
+        v = np.ones_like(y) * self.U_inf * np.sin(self.alpha)
+        return u, v
+
+    def _vortex_induced_velocity(self, x, y, x_v, y_v, gamma_v):
+        dx = x - x_v
+        dy = y - y_v
+        r_sq = dx ** 2 + dy ** 2
+
+        mask = r_sq > 1e-12
+        u_ind = np.zeros_like(x)
+        v_ind = np.zeros_like(y)
+
+        u_ind[mask] = (-gamma_v / (2 * np.pi)) * (dy[mask] / r_sq[mask])
+        v_ind[mask] = (gamma_v / (2 * np.pi)) * (dx[mask] / r_sq[mask])
+
+        return u_ind, v_ind
+
+    def calculate_convection_velocity(self, x, y):
+        u_conv, v_conv = self._freestream_velocity(x, y)
+
+        for x_v, y_v, gamma_v in self.vortices:
+            u_ind, v_ind = self._vortex_induced_velocity(x, y, x_v, y_v, gamma_v)
+            u_conv += u_ind
+            v_conv += v_ind
+
+        return u_conv, v_conv
+
+    def step(self, dt):
+        if not self.vortices:
+            return
+
+        vortex_positions = np.array([[v[0], v[1]] for v in self.vortices])
+        x_v = vortex_positions[:, 0]
+        y_v = vortex_positions[:, 1]
+
+        u_conv, v_conv = self.calculate_convection_velocity(x_v, y_v)
+
+        super().step(dt, u_conv, v_conv)
+
+    def total_velocity_field(self, X, Y):
+        u_conv, v_conv = self._freestream_velocity(X, Y)
+
+        for x_v, y_v, gamma_v in self.vortices:
+            u_ind, v_ind = self._vortex_induced_velocity(X, Y, x_v, y_v, gamma_v)
+            u_conv += u_ind
+            v_conv += v_ind
+
+        return u_conv, v_conv
